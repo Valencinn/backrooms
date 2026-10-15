@@ -1,3 +1,7 @@
+## Explorador de Backrooms
+
+La página principal ahora contiene el explorador 3D. Ver [BACKROOMS.md](BACKROOMS.md) para componentes, controles, instalación y detalles de Three.js.
+
 # TP6 — Experiencia web transmedia
 
 > **Boilerplate:** SEÑAL 88

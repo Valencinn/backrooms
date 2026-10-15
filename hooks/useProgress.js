@@ -1,3 +1,8 @@
+/**
+ * Persistencia y autenticación del archivo SEÑAL 88; no se usa en el explorador Backrooms.
+ * Hidrata localStorage y combina evidencias con Firestore si está configurado.
+ * Las refs evitan lecturas de estado viejo dentro de callbacks asíncronos.
+ */
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -14,14 +19,17 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { chapters } from "@/data/chapters";
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase";
 
+// Una clave propia separa el progreso de esta experiencia del resto del navegador.
 const STORAGE_KEY = "signal-88-progress";
 const VALID_CLUE_IDS = new Set(chapters.map((chapter) => chapter.clueId));
 
+// Descarta datos desconocidos y duplicados antes de aceptar progreso local o remoto.
 function normalizeClues(value) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((clueId) => VALID_CLUE_IDS.has(clueId)))];
 }
 
+// Si el almacenamiento no puede leerse o contiene JSON inválido, devuelve una colección vacía.
 function readLocal() {
   try {
     return normalizeClues(
@@ -32,15 +40,18 @@ function readLocal() {
   }
 }
 
+// Serializa las evidencias para conservarlas entre visitas.
 function saveLocal(clues) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(clues));
 }
 
+// Identifica el proveedor de acceso que se guardará junto al perfil.
 function getProvider(user) {
   if (user.isAnonymous) return "anonymous";
   return user.providerData[0]?.providerId || "password";
 }
 
+// Actualiza el perfil mediante merge; createdAt se agrega solamente al crear el documento.
 async function saveUserProfile(user, db) {
   const userRef = doc(db, "users", user.uid);
   const snapshot = await getDoc(userRef);
@@ -58,6 +69,7 @@ async function saveUserProfile(user, db) {
   await setDoc(userRef, profile, { merge: true });
 }
 
+// Expone evidencias, estado de conexión y acciones de autenticación a los componentes.
 export function useProgress() {
   const [clues, setClues] = useState([]);
   const cluesRef = useRef([]);
@@ -69,10 +81,12 @@ export function useProgress() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
 
+  // Al montar, restaura la copia local y observa cambios de sesión si hay configuración Firebase.
   useEffect(() => {
     const localClues = readLocal();
     cluesRef.current = localClues;
 
+    // Difiere la hidratación al siguiente turno del navegador; el cleanup cancela el temporizador.
     const hydrateLocal = window.setTimeout(() => {
       setClues(localClues);
       saveLocal(localClues);
@@ -82,7 +96,9 @@ export function useProgress() {
     if (!hasFirebaseConfig) return () => window.clearTimeout(hydrateLocal);
 
     const { auth, db } = getFirebaseServices();
+    // Cada cambio de usuario inicia el perfil y sincroniza sus evidencias.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Sin cuenta activa, intenta iniciar un invitado anónimo; ante un fallo se mantiene el modo local.
       if (!user) {
         remoteUserRef.current = null;
         setRemoteUser(null);
@@ -107,6 +123,7 @@ export function useProgress() {
         const remoteClues = normalizeClues(
           snapshot.exists() ? snapshot.data().clues : [],
         );
+        // La unión conserva evidencias obtenidas en cualquiera de las dos copias.
         const mergedClues = normalizeClues([
           ...cluesRef.current,
           ...remoteClues,
@@ -134,6 +151,7 @@ export function useProgress() {
     };
   }, []);
 
+  // Con la hidratación y la cuenta listas, publica los cambios de evidencias en Firestore.
   useEffect(() => {
     if (!ready || !remoteUser) return;
     const { db } = getFirebaseServices();
@@ -146,11 +164,15 @@ export function useProgress() {
         updatedAt: serverTimestamp(),
       },
       { merge: true },
-    ).catch((error) => console.warn("No se pudo sincronizar el progreso.", error));
+    ).catch((error) =>
+      console.warn("No se pudo sincronizar el progreso.", error),
+    );
   }, [clues, ready, remoteUser]);
 
+  // Registra solo ids válidos y aún no descubiertos; useCallback conserva la identidad de esta acción.
   const discover = useCallback((clueId) => {
-    if (!VALID_CLUE_IDS.has(clueId) || cluesRef.current.includes(clueId)) return;
+    if (!VALID_CLUE_IDS.has(clueId) || cluesRef.current.includes(clueId))
+      return;
 
     const nextClues = [...cluesRef.current, clueId];
     cluesRef.current = nextClues;
@@ -158,6 +180,7 @@ export function useProgress() {
     setClues(nextClues);
   }, []);
 
+  // Vacía primero la copia local y después el documento de progreso de la cuenta conectada.
   const reset = useCallback(async () => {
     cluesRef.current = [];
     saveLocal([]);
@@ -179,6 +202,7 @@ export function useProgress() {
     );
   }, []);
 
+  // Abre Google y usa finally para restaurar el estado de carga tanto en éxito como en error.
   const signInWithGoogle = useCallback(async () => {
     setAuthLoading(true);
     setAuthError("");
@@ -193,6 +217,7 @@ export function useProgress() {
     }
   }, []);
 
+  // Elige creación o ingreso según el modo y propaga errores para evitar cerrar el formulario.
   const submitEmail = useCallback(async ({ email, password, mode }) => {
     setAuthLoading(true);
     setAuthError("");
@@ -211,6 +236,7 @@ export function useProgress() {
     }
   }, []);
 
+  // Al cerrar sesión, el observador de autenticación inicia una cuenta anónima.
   const continueAsGuest = useCallback(async () => {
     setAuthLoading(true);
     setAuthError("");
@@ -225,6 +251,7 @@ export function useProgress() {
     }
   }, []);
 
+  // Un Set acelera consultas de pertenencia; se recalcula solamente cuando cambian las evidencias.
   const discovered = useMemo(() => new Set(clues), [clues]);
 
   return {

@@ -1,3 +1,7 @@
+/**
+ * Coordinador original de SEÑAL 88, disponible en /archivo/*.
+ * Combina rutas, evidencias, persistencia y un artefacto Three.js por capítulo.
+ */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,6 +12,7 @@ import AuthPanel from "@/components/AuthPanel";
 import ThreeArtifact from "@/components/ThreeArtifact";
 
 export default function Experience({ initialChapterId }) {
+  // La URL determina el capítulo activo; sin identificador se selecciona el primero.
   const router = useRouter();
   const activeIndex = Math.max(
     chapters.findIndex((item) => item.id === initialChapterId),
@@ -17,6 +22,7 @@ export default function Experience({ initialChapterId }) {
   const [flash, setFlash] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [completionOpen, setCompletionOpen] = useState(false);
+  // useProgress administra almacenamiento local y sincronización opcional con Firebase.
   const {
     authError,
     authLoading,
@@ -37,12 +43,14 @@ export default function Experience({ initialChapterId }) {
     discovered.has(item.clueId),
   ).length;
 
+  // Desactiva el destello tras un descubrimiento y retira el temporizador al desmontar.
   useEffect(() => {
     if (!flash) return;
     const timeout = window.setTimeout(() => setFlash(false), 650);
     return () => window.clearTimeout(timeout);
   }, [flash]);
 
+  // Registra una evidencia una sola vez; si completa la colección, abre el desenlace.
   function handleDiscover() {
     if (isDiscovered) return;
     const completesExperience = chapters.every(
@@ -54,10 +62,12 @@ export default function Experience({ initialChapterId }) {
     if (completesExperience) setCompletionOpen(true);
   }
 
+  // El primer capítulo está disponible; los siguientes requieren la evidencia del anterior.
   function canOpen(index) {
     return index === 0 || discovered.has(chapters[index - 1].clueId);
   }
 
+  // Las acciones de navegación utilizan el router de Next.js para actualizar la URL.
   function enterExperience() {
     router.push(`/archivo/${chapters[0].id}`);
   }
@@ -70,6 +80,7 @@ export default function Experience({ initialChapterId }) {
     router.push("/");
   }
 
+  // Borra progreso local/remoto y vuelve al inicio, incluso si falla la sincronización remota.
   async function handleReset() {
     setCompletionOpen(false);
     try {
@@ -79,6 +90,7 @@ export default function Experience({ initialChapterId }) {
     }
   }
 
+  // Espera la hidratación local antes de calcular el estado de desbloqueo de los capítulos.
   if (!ready) return <main className="loading">SINTONIZANDO…</main>;
 
   return (
@@ -86,6 +98,7 @@ export default function Experience({ initialChapterId }) {
       <div className="noise" aria-hidden="true" />
       <div className="scanlines" aria-hidden="true" />
 
+      {/* Introducción heredada: se muestra solamente si no llegó un capítulo inicial. */}
       {!entered && (
         <section className="intro">
           <p className="kicker">ARCHIVO NO AUTORIZADO / EXP. 06</p>
@@ -100,7 +113,9 @@ export default function Experience({ initialChapterId }) {
             <span>INICIAR RECEPCIÓN</span>
             <span aria-hidden="true">↗</span>
           </button>
-          <p className="microcopy">Usá auriculares. O fingí que este mensaje los recomendaba.</p>
+          <p className="microcopy">
+            Usá auriculares. O fingí que este mensaje los recomendaba.
+          </p>
         </section>
       )}
 
@@ -110,7 +125,9 @@ export default function Experience({ initialChapterId }) {
         </button>
         <div className="status">
           <span>{syncState === "cloud" ? "NUBE" : "LOCAL"}</span>
-          <span>SEÑAL {Math.round((discoveredCount / chapters.length) * 100)}%</span>
+          <span>
+            SEÑAL {Math.round((discoveredCount / chapters.length) * 100)}%
+          </span>
           {firebaseConfigured && (
             <button className="auth-trigger" onClick={() => setAuthOpen(true)}>
               {authUser?.isAnonymous
@@ -121,8 +138,12 @@ export default function Experience({ initialChapterId }) {
         </div>
       </header>
 
+      {/* Navegación, relato y artefacto comparten el color del capítulo mediante una variable CSS. */}
       <section className="chapter-layout" style={{ "--signal": chapter.color }}>
-        <aside className="chapter-nav" aria-label="Fragmentos de la transmisión">
+        <aside
+          className="chapter-nav"
+          aria-label="Fragmentos de la transmisión"
+        >
           {chapters.map((item, index) => {
             const unlocked = canOpen(index);
             return (
@@ -135,7 +156,9 @@ export default function Experience({ initialChapterId }) {
               >
                 <b>{item.number}</b>
                 <span>{item.label}</span>
-                <i>{discovered.has(item.clueId) ? "◆" : unlocked ? "◇" : "×"}</i>
+                <i>
+                  {discovered.has(item.clueId) ? "◆" : unlocked ? "◇" : "×"}
+                </i>
               </button>
             );
           })}
@@ -153,7 +176,9 @@ export default function Experience({ initialChapterId }) {
           <p className="chapter-copy">{chapter.copy}</p>
 
           <div className={`clue-card ${isDiscovered ? "found" : ""}`}>
-            <small>{isDiscovered ? "EVIDENCIA RECUPERADA" : "EVIDENCIA CIFRADA"}</small>
+            <small>
+              {isDiscovered ? "EVIDENCIA RECUPERADA" : "EVIDENCIA CIFRADA"}
+            </small>
             <strong>{isDiscovered ? chapter.clueLabel : "██████ ████"}</strong>
           </div>
         </div>
@@ -180,6 +205,7 @@ export default function Experience({ initialChapterId }) {
         <span>{new Date().toLocaleDateString("es-AR")}</span>
       </footer>
 
+      {/* Desenlace y acceso son capas condicionales controladas por el estado React. */}
       {completionOpen && (
         <section className="completion" role="dialog" aria-modal="true">
           <button
@@ -190,8 +216,14 @@ export default function Experience({ initialChapterId }) {
             ×
           </button>
           <p className="kicker">TRANSMISIÓN RECONSTRUIDA</p>
-          <h2>NO ERA UN ECO.<br />ERA UNA INVITACIÓN.</h2>
-          <p>Fin del prototipo. La transmisión fue reconstruida por completo.</p>
+          <h2>
+            NO ERA UN ECO.
+            <br />
+            ERA UNA INVITACIÓN.
+          </h2>
+          <p>
+            Fin del prototipo. La transmisión fue reconstruida por completo.
+          </p>
         </section>
       )}
 

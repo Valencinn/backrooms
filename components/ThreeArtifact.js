@@ -1,3 +1,7 @@
+/**
+ * Visor 3D del archivo original: proyecta un rayo sobre el núcleo
+ * y notifica descubrimientos a React mediante onDiscover.
+ */
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -5,6 +9,7 @@ import * as THREE from "three";
 
 export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
   const mountRef = useRef(null);
+  // Callback actualizado sin recrear el renderer cada vez que cambia una función del padre.
   const onDiscoverRef = useRef(onDiscover);
 
   useEffect(() => {
@@ -26,9 +31,11 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     mount.appendChild(renderer.domElement);
 
+    // El grupo permite rotar núcleo y halo como una unidad.
     const group = new THREE.Group();
     scene.add(group);
 
+    // Al descubrirse, el núcleo pasa de wireframe a una superficie con mayor emisión.
     const geometry = new THREE.IcosahedronGeometry(1.18, 3);
     const material = new THREE.MeshStandardMaterial({
       color: chapter.color,
@@ -42,6 +49,7 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
     artifact.userData.clickable = true;
     group.add(artifact);
 
+    // Un toro independiente rodea al núcleo y refuerza la silueta del objeto.
     const haloGeometry = new THREE.TorusGeometry(1.72, 0.012, 12, 180);
     const haloMaterial = new THREE.MeshBasicMaterial({
       color: chapter.accent,
@@ -52,6 +60,7 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
     halo.rotation.x = Math.PI / 2.6;
     group.add(halo);
 
+    // Nube de 360 puntos distribuidos en una esfera para agregar profundidad.
     const pointsGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(360 * 3);
     for (let index = 0; index < 360; index += 1) {
@@ -62,7 +71,10 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
       positions[index * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[index * 3 + 2] = radius * Math.cos(phi);
     }
-    pointsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    pointsGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3),
+    );
     const pointsMaterial = new THREE.PointsMaterial({
       color: chapter.accent,
       size: 0.018,
@@ -77,11 +89,13 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
     keyLight.position.set(2.5, 2, 3);
     scene.add(keyLight);
 
+    // El raycaster lanza un rayo desde la cámara según la posición normalizada del puntero.
     const pointer = new THREE.Vector2(20, 20);
     const raycaster = new THREE.Raycaster();
     let hovered = false;
     let frameId;
 
+    // Sincroniza tamaño del renderer y relación de aspecto de la cámara con el contenedor.
     function resize() {
       const { clientWidth, clientHeight } = mount;
       renderer.setSize(clientWidth, clientHeight, false);
@@ -89,12 +103,14 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
       camera.updateProjectionMatrix();
     }
 
+    // Convierte píxeles relativos al canvas al rango [-1, 1], invirtiendo el eje vertical.
     function updatePointer(event) {
       const rect = renderer.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     }
 
+    // La intersección determina el hover y cambia el cursor para señalar un objeto interactivo.
     function handleMove(event) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
@@ -102,6 +118,7 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
       renderer.domElement.style.cursor = hovered ? "crosshair" : "grab";
     }
 
+    // Solo notifica un descubrimiento si el rayo atraviesa el núcleo.
     function handleClick(event) {
       updatePointer(event);
       raycaster.setFromCamera(pointer, camera);
@@ -110,8 +127,10 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
       }
     }
 
+    // THREE.Timer calcula tiempo transcurrido y se conecta a la visibilidad del documento.
     const timer = new THREE.Timer();
     timer.connect(document);
+    // La rotación depende del tiempo; el hover añade un pequeño pulso al núcleo.
     function animate(timestamp) {
       timer.update(timestamp);
       const elapsed = timer.getElapsed();
@@ -132,6 +151,7 @@ export default function ThreeArtifact({ chapter, onDiscover, discovered }) {
     resize();
     animate();
 
+    // Cancela el loop, elimina listeners y libera los recursos de GPU creados en este efecto.
     return () => {
       cancelAnimationFrame(frameId);
       observer.disconnect();

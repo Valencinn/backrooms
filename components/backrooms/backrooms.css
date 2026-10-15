@@ -1,0 +1,1150 @@
+/* Estilos exclusivos del explorador (.br-*). Tailwind resuelve distribución básica; este archivo define el tema liminal, las capas VHS y el comportamiento responsive. */
+/* Variables del tema. --br-accent se recibe desde React y cambia con el nivel seleccionado. */
+.br-app {
+  --br-accent: #ddbc69;
+  --br-bg: #11120f;
+  --br-panel: #171813;
+  --br-line: #303127;
+  --br-muted: #828476;
+  --br-white: #e9e7da;
+  background: var(--br-bg);
+  color: var(--br-white);
+  font-family: "Courier New", monospace;
+  min-height: 100svh;
+  font-size: 12px;
+  letter-spacing: 0.025em;
+}
+.br-app button,
+.br-app a {
+  -webkit-tap-highlight-color: transparent;
+}
+.br-app button {
+  cursor: pointer;
+}
+/* Foco visible para navegación por teclado; se mantiene separado de hover y del estado activo. */
+.br-app button:focus-visible,
+.br-app a:focus-visible,
+.br-three-mount canvas:focus-visible {
+  outline: 2px solid var(--br-accent);
+  outline-offset: -4px;
+}
+.br-app button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+/* Cabecera: identidad del proyecto y acceso a la guía de campo. */
+.br-header {
+  height: 80px;
+  padding: 0 35px;
+  border-bottom: 1px solid var(--br-line);
+}
+.br-brand {
+  gap: 18px;
+  color: #eae8dc;
+  text-decoration: none;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  font-size: 19px;
+}
+.br-brand small {
+  display: block;
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.19em;
+  color: #929487;
+  margin-top: 8px;
+}
+/* Marca geométrica hecha con tres cuadrados CSS; no requiere una imagen externa. */
+.br-brand-mark {
+  position: relative;
+  display: block;
+  width: 37px;
+  height: 37px;
+}
+.br-brand-mark i {
+  position: absolute;
+  width: 23px;
+  height: 23px;
+  border: 1px solid #d8bd70;
+  left: 0;
+  top: 0;
+}
+.br-brand-mark i:nth-child(2) {
+  left: 7px;
+  top: 7px;
+}
+.br-brand-mark i:nth-child(3) {
+  left: 14px;
+  top: 14px;
+  background: #cbb1661a;
+}
+.br-header-right {
+  gap: 25px;
+  font-size: 9px;
+  letter-spacing: 0.09em;
+}
+/* Indicador narrativo de conexión; no representa una medición real de red. */
+.br-online {
+  color: #a5aa92;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.br-online i {
+  width: 5px;
+  height: 5px;
+  background: #a5b683;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #a5b68350;
+}
+.br-header-divider {
+  height: 23px;
+  width: 1px;
+  background: var(--br-line);
+}
+.br-guide-button {
+  border: 0;
+  background: none;
+  padding: 10px 0;
+  color: #bcbdb0;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  font-size: 10px;
+}
+.br-guide-button:hover {
+  color: var(--br-accent);
+}
+.br-guide-button > span:first-child {
+  font-size: 21px;
+}
+/* Grid principal: columna estrecha de navegación y columna flexible para ampliar el visor. */
+.br-workspace {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr);
+  min-height: calc(100svh - 123px);
+}
+.br-sidebar-label {
+  font-size: 9px;
+  color: #8d9080;
+  letter-spacing: 0.08em;
+  padding: 0 6px 21px;
+}
+.br-sidebar-label > span:last-child {
+  color: #666b5e;
+}
+/* Colores de riesgo narrativo compartidos por el HUD; no indican detección de entidades. */
+.br-risk-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 7px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: #a4b48a;
+}
+.risk-1 {
+  background: #d7b26b;
+}
+.risk-2 {
+  background: #d08465;
+}
+.br-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 48px;
+}
+.br-sidebar-foot {
+  border-top: 1px solid var(--br-line);
+  padding: 19px 2px;
+  font-size: 7px;
+  color: #656d59;
+}
+/* Espaciado exterior del área de prueba; mantiene el canvas como elemento dominante. */
+.br-main {
+  padding: 24px 20px 0;
+}
+.br-section-heading {
+  margin-bottom: 18px;
+  gap: 20px;
+}
+.br-eyebrow {
+  color: #9b967c;
+  font-size: 8px;
+  letter-spacing: 0.17em;
+  margin: 0 0 13px;
+}
+.br-section-heading h1 {
+  font:
+    400 clamp(22px, 2.3vw, 34px)/1.15 Arial,
+    Helvetica,
+    sans-serif;
+  letter-spacing: -0.045em;
+  margin: 0;
+  color: #e3e1d5;
+}
+.br-section-heading h1 > span {
+  color: #b8a162;
+  margin-left: 5px;
+  animation: br-blink 2s steps(2) infinite;
+}
+.br-archive-id {
+  font-size: 8px;
+  line-height: 2;
+  color: #a6a38e;
+  text-align: right;
+  white-space: nowrap;
+}
+.br-archive-id span {
+  color: #666f5c;
+  font-size: 7px;
+}
+/* Contenedor relativo y aislado: sus capas z-index no interfieren con el resto de la página. */
+.br-viewport {
+  isolation: isolate;
+  position: relative;
+  height: clamp(500px, calc(100svh - 324px), 940px);
+  overflow: hidden;
+  border: 1px solid #565039;
+  background: #4e482b;
+}
+/* Marco de cámara interior, puramente decorativo y sin capturar interacción. */
+.br-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px solid #e5d7aa1a;
+  pointer-events: none;
+  z-index: 4;
+}
+/* El punto de montaje ocupa todo el visor; ResizeObserver usa su tamaño para actualizar la cámara. */
+.br-three-mount {
+  position: absolute;
+  inset: 0;
+}
+.br-three-mount canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+/* Durante la exploración, el canvas recibe gestos propios en lugar del desplazamiento táctil del navegador. */
+.is-exploring .br-three-mount canvas {
+  touch-action: none;
+  cursor: grab;
+}
+.is-exploring .br-three-mount canvas:active {
+  cursor: grabbing;
+}
+/* Capas visuales sobre WebGL. pointer-events:none deja pasar clics y arrastres hacia la escena. */
+.br-film-grain,
+.br-crt,
+.br-vignette {
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  z-index: 1;
+}
+.br-film-grain,
+.br-crt {
+  display: none;
+}
+/* Ruido SVG generado con feTurbulence y desplazado por pasos para simular grano de cinta. */
+.has-effects .br-film-grain {
+  display: block;
+  opacity: 0.115;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' d='M0 0h200v200H0z'/%3E%3C/svg%3E");
+  background-size: 175px;
+  animation: br-grain 0.25s steps(2) infinite;
+}
+/* Líneas de escaneo construidas con un degradado repetido; no necesitan procesamiento de GPU adicional de Three.js. */
+.has-effects .br-crt {
+  display: block;
+  opacity: 0.16;
+  background: repeating-linear-gradient(
+    0deg,
+    #0000 0px,
+    #0000 2px,
+    #0008 3px,
+    #0000 4px
+  );
+}
+/* La viñeta oscurece bordes y parte inferior para separar el HUD del entorno. */
+.br-vignette {
+  background:
+    linear-gradient(0deg, #090b08c9, transparent 78%),
+    radial-gradient(ellipse at 57% 35%, transparent 10%, #11130880 100%);
+}
+/* Texto superpuesto de grabación, identificador de cámara y contador proporcionado por React. */
+.br-camera-top {
+  position: absolute;
+  top: 26px;
+  left: 27px;
+  right: 27px;
+  z-index: 2;
+  color: #ece9cd;
+  font-size: 11px;
+  text-shadow: 0 1px 6px #0009;
+}
+.br-record {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.1em;
+}
+.br-record i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: #e08266;
+  border-radius: 50%;
+}
+.has-effects .br-record i {
+  animation: br-blink 3s steps(2) infinite;
+}
+.br-timecode {
+  margin-left: 14px;
+  letter-spacing: 0.07em;
+  font-size: 10px;
+}
+.br-camera-id {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+.br-camera-id > span {
+  margin: 0 7px;
+  color: #c5bb8f;
+}
+.br-scene-tag {
+  position: absolute;
+  top: 62px;
+  left: 27px;
+  font-size: 7px;
+  color: #d6d0af;
+  z-index: 2;
+  letter-spacing: 0.08em;
+}
+.br-scene-tag > span {
+  font-size: 14px;
+  margin-right: 7px;
+}
+/* Mira central decorativa: la cámara se orienta arrastrando, no apuntando a este elemento. */
+.br-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 41%;
+  font-size: 22px;
+  font-weight: normal;
+  color: #e9e4c67a;
+  z-index: 1;
+  pointer-events: none;
+}
+/* Panel informativo translúcido: backdrop-filter difumina la escena que queda detrás. */
+.br-level-hud {
+  position: absolute;
+  z-index: 3;
+  bottom: 65px;
+  left: 32px;
+  width: min(390px, calc(100% - 64px));
+  padding: 23px 23px 0;
+  border-left: 1px solid #dfc8825c;
+  background: linear-gradient(90deg, #171a10c2, #171a1045);
+  backdrop-filter: blur(9px);
+}
+.br-hud-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: #e7ce8e;
+}
+.br-hud-line {
+  width: 16px;
+  height: 1px;
+  background: #ddc48a;
+}
+.br-hud-class {
+  margin-left: auto;
+  border: 1px solid #c1b17955;
+  padding: 4px 6px;
+  font-size: 7px;
+  color: #d2c6a2;
+}
+.br-level-hud h2 {
+  font:
+    500 clamp(37px, 4.4vw, 67px)/1.04 Arial,
+    Helvetica,
+    sans-serif;
+  letter-spacing: -0.065em;
+  margin: 17px 0 9px;
+  color: #eeead6;
+  white-space: nowrap;
+}
+.br-level-hud h2 > span {
+  color: var(--br-accent);
+}
+.br-subtitle {
+  font-size: 10px;
+  letter-spacing: 0.015em;
+  color: #e2cc98;
+  margin: 0 0 16px;
+}
+.br-description {
+  font:
+    12px/1.8 Arial,
+    sans-serif;
+  letter-spacing: 0.01em;
+  max-width: 350px;
+  margin: 0 0 18px;
+  color: #cbc9b2;
+}
+/* Dos columnas para peligro y entidades del nivel activo. */
+.br-hud-stats {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  padding: 14px 0;
+  border-top: 1px solid #bcb58b30;
+  gap: 12px;
+}
+.br-hud-stats > div > span {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  color: #a8ad94;
+  margin-bottom: 7px;
+}
+.br-hud-stats strong {
+  font-size: 9px;
+  font-weight: 400;
+  color: #d7d9c0;
+}
+/* Acción principal: entra o sale del modo de exploración y toma el color del nivel. */
+.br-explore-button {
+  background: var(--br-accent);
+  border: 1px solid var(--br-accent);
+  width: calc(100% + 46px);
+  margin: 3px -23px 0;
+  padding: 0 18px;
+  color: #26281b;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 0.09em;
+  min-height: 47px;
+  transition: filter 0.2s;
+}
+.br-explore-button:hover {
+  filter: brightness(1.13);
+}
+.br-explore-button > span:first-child > span {
+  margin-left: 10px;
+}
+.br-button-icon {
+  font-size: 20px;
+  line-height: 1;
+  padding-left: 18px;
+  border-left: 1px solid #4b452e42;
+}
+/* Miniatura parcial de la planta; el SVG y la posición se calculan en BackroomsExplorer. */
+.br-minimap {
+  position: absolute;
+  z-index: 2;
+  bottom: 72px;
+  right: 27px;
+  width: 140px;
+  color: #c0bd8d;
+  padding: 13px;
+  background: #161c1570;
+  border: 1px solid #d6d29b3b;
+  backdrop-filter: blur(5px);
+}
+.br-minimap > div {
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+.br-minimap svg {
+  height: 130px;
+  width: 100%;
+  margin: 9px 0;
+  opacity: 0.8;
+}
+.br-map-caption {
+  display: block;
+  text-align: center;
+  font-size: 6px;
+  color: #b0b59a;
+}
+.br-camera-bottom {
+  position: absolute;
+  z-index: 3;
+  bottom: 25px;
+  left: 27px;
+  right: 27px;
+  font-size: 7px;
+  color: #e0d9b6;
+  letter-spacing: 0.11em;
+  gap: 15px;
+}
+.br-camera-bottom > span:last-child {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.br-tape-icon {
+  margin: 0 8px;
+  color: #d8d2b5;
+}
+/* Barra bajo el visor con coordenadas reales y controles de pausa, VHS y pantalla completa. */
+.br-instrument-bar {
+  height: 53px;
+  border: 1px solid var(--br-line);
+  border-top: 0;
+  padding: 0 16px;
+  gap: 10px;
+  font-size: 9px;
+  color: #7c856e;
+}
+.br-position {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.br-position b {
+  font-weight: 400;
+  color: #afb29c;
+  font-variant-numeric: tabular-nums;
+  min-width: 35px;
+}
+.br-position > span:nth-of-type(2) {
+  color: #4b5241;
+  margin: 0 4px;
+}
+.br-small-cross {
+  font-size: 18px;
+  color: #989d80;
+  margin-right: 4px;
+}
+.br-instrument-divider {
+  height: 14px;
+  width: 1px;
+  background: var(--br-line);
+  margin: 0 6px;
+}
+.br-view-controls {
+  gap: 19px;
+}
+.br-view-controls button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 0;
+  padding: 7px 0;
+  background: none;
+  font-size: 9px;
+  color: #a8ad96;
+}
+.br-view-controls button:hover {
+  color: #e9d39d;
+}
+.br-view-controls button:first-child {
+  font-size: 15px;
+}
+.br-view-controls button:first-child > span {
+  font-size: 8px;
+}
+.br-view-controls svg {
+  height: 19px;
+  width: 19px;
+}
+.br-on {
+  font-size: 7px;
+  color: #d9bf7f;
+  border: 1px solid #655a37;
+  padding: 2px 3px;
+}
+.br-effect-icon {
+  font-size: 15px;
+}
+/* Registro narrativo del nivel acompañado por el mismo contador que muestra la cámara. */
+.br-log {
+  gap: 13px;
+  font-size: 8px;
+  min-height: 48px;
+  color: #7e886f;
+}
+.br-log-label {
+  color: #a4aa94;
+  letter-spacing: 0.07em;
+  font-size: 7px;
+}
+.br-log-time {
+  font-variant-numeric: tabular-nums;
+  color: #59664c;
+  font-size: 8px;
+}
+.br-log p {
+  font-size: 8px;
+  margin: 0;
+}
+.br-signal-bars {
+  margin-left: auto;
+  white-space: nowrap;
+  color: #b1ae7c;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+.br-signal-bars b {
+  font-size: 8px;
+  font-weight: 400;
+  color: #969d82;
+  letter-spacing: 0;
+}
+.br-footer {
+  height: 43px;
+  align-items: center;
+  border-top: 1px solid var(--br-line);
+  padding: 0 29px;
+  font-size: 7px;
+  color: #626e53;
+  letter-spacing: 0.12em;
+}
+.br-footer > span:first-child {
+  color: #919678;
+}
+.br-footer i {
+  font-style: normal;
+  color: #3e4934;
+  margin: 0 8px;
+}
+.br-footer-square {
+  color: #aea57c;
+  margin-left: 22px;
+}
+/* Diálogo nativo: tamaño limitado y scroll interno para que la guía funcione en pantallas pequeñas. */
+.br-guide {
+  position: fixed;
+  margin: auto;
+  width: min(540px, calc(100% - 32px));
+  max-height: 85svh;
+  overflow: auto;
+  background: #171a13;
+  color: #d1d4bd;
+  border: 1px solid #817047;
+  padding: 37px;
+  font-family: "Courier New", monospace;
+  box-shadow: 0 25px 100px #000a;
+}
+/* Fondo del diálogo en la capa superior del navegador; atenúa el resto de la interfaz. */
+.br-guide::backdrop {
+  background: #070a07c9;
+  backdrop-filter: blur(6px);
+}
+.br-guide h2 {
+  font:
+    32px Arial,
+    sans-serif;
+  letter-spacing: -0.05em;
+  margin: 15px 0 24px;
+}
+.br-guide h2 span {
+  color: #ddbc69;
+}
+.br-guide p:not(.br-eyebrow) {
+  font:
+    13px/1.8 Arial,
+    sans-serif;
+  color: #a9b098;
+}
+.br-guide dl {
+  border-top: 1px solid #3a422d;
+  padding-top: 24px;
+  margin-top: 24px;
+}
+.br-guide dt {
+  font-size: 10px;
+  color: #d8c58e;
+  margin-bottom: 6px;
+}
+.br-guide dd {
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+  margin: 0 0 20px;
+  color: #99a38a;
+}
+.br-guide-close {
+  position: absolute;
+  top: 14px;
+  right: 19px;
+  border: 0;
+  background: none;
+  font-size: 28px;
+  color: #c8cbb8;
+}
+.br-guide .br-guide-note {
+  border-left: 2px solid #bfa669;
+  padding: 10px 15px;
+  background: #d2b9690a;
+}
+.br-guide small {
+  font-size: 9px;
+  color: #7d896c;
+  line-height: 1.7;
+}
+/* Carga y error cubren la escena; el estado de error queda por encima del HUD. */
+.br-scene-status {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #23271c;
+  color: #dfcc92;
+  font-size: 10px;
+  padding: 30px;
+  text-align: center;
+}
+.br-scene-error {
+  z-index: 5;
+}
+.br-scene-error p {
+  max-width: 340px;
+  font:
+    13px/1.7 Arial,
+    sans-serif;
+  margin: 18px 0;
+}
+.br-scene-error button {
+  border: 1px solid #a49160;
+  padding: 12px;
+  background: none;
+  color: #e3d39f;
+}
+.br-notice {
+  position: absolute;
+  z-index: 6;
+  top: 90px;
+  right: 25px;
+  left: 25px;
+  background: #171a13ed;
+  border: 1px solid #817047;
+  padding: 15px;
+  font-size: 11px;
+  color: #e2d09b;
+}
+/* Botonera alternativa de movimiento. touch-action y user-select evitan gestos o selección accidentales. */
+.br-touch-controls {
+  position: absolute;
+  z-index: 5;
+  right: 24px;
+  top: 45%;
+  display: grid;
+  grid-template-columns: repeat(3, 37px);
+  gap: 5px;
+}
+.br-touch-controls button {
+  width: 37px;
+  height: 37px;
+  border: 1px solid #cfc79f6b;
+  color: #eee7bd;
+  background: #171d15a6;
+  font-size: 18px;
+  touch-action: none;
+  user-select: none;
+}
+.br-touch-controls button:first-child {
+  grid-column: 2;
+}
+.br-touch-controls button:nth-child(2) {
+  grid-column: 1;
+}
+.br-touch-controls button:active {
+  background: #d9bd75;
+  color: #1c2417;
+}
+/* La Fullscreen API aplica :fullscreen al visor completo, incluyendo sus controles superpuestos. */
+.br-viewport:fullscreen {
+  height: 100svh;
+  width: 100vw;
+}
+.br-viewport:fullscreen .br-level-hud {
+  bottom: 85px;
+}
+.br-viewport:fullscreen .br-camera-bottom {
+  bottom: 32px;
+}
+.br-viewport:fullscreen .br-minimap {
+  bottom: 85px;
+}
+/* Animación reutilizable: las reglas que la invocan definen duración y repetición. */
+@keyframes br-grain {
+  0%,
+  100% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 30px -20px;
+  }
+  50% {
+    background-position: -15px 40px;
+  }
+  75% {
+    background-position: 20px 10px;
+  }
+}
+/* Animación reutilizable: las reglas que la invocan definen duración y repetición. */
+@keyframes br-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Adaptación a pantallas amplias: distribuye el espacio disponible sin modificar el contenido. */
+
+@media (min-width: 1600px) {
+  .br-workspace {
+    grid-template-columns: 208px minmax(0, 1fr);
+  }
+  .br-main {
+    padding: 28px 26px 0;
+  }
+  .br-viewport {
+    height: calc(100svh - 334px);
+  }
+  .br-level-hud {
+    left: 45px;
+    bottom: 75px;
+    width: 420px;
+  }
+  .br-description {
+    font-size: 13px;
+  }
+  .br-level-hud h2 {
+    font-size: 70px;
+  }
+  .br-minimap {
+    right: 38px;
+    width: 165px;
+  }
+  .br-minimap svg {
+    height: 160px;
+  }
+}
+
+/* Adaptación a pantallas reducidas: reorganiza navegación, controles y tamaños para conservar legibilidad. */
+
+@media (max-width: 1100px) {
+  .br-workspace {
+    grid-template-columns: 188px minmax(0, 1fr);
+  }
+  .br-header {
+    padding: 0 24px;
+  }
+  .br-main {
+    padding: 24px 20px 0;
+  }
+  .br-minimap {
+    width: 105px;
+    right: 20px;
+    bottom: 80px;
+    padding: 9px;
+  }
+  .br-minimap svg {
+    height: 100px;
+  }
+  .br-level-hud {
+    left: 22px;
+    width: 330px;
+    padding: 20px 19px 0;
+  }
+  .br-level-hud h2 {
+    font-size: 47px;
+  }
+  .br-explore-button {
+    width: calc(100% + 38px);
+    margin-left: -19px;
+    margin-right: -19px;
+  }
+  .br-archive-id {
+    display: none;
+  }
+  .br-log-label {
+    display: none;
+  }
+  .br-view-controls {
+    gap: 13px;
+  }
+  .br-instrument-bar {
+    padding-inline: 12px;
+  }
+  .br-position {
+    gap: 5px;
+  }
+  .br-minimap {
+    display: none;
+  }
+}
+
+/* Adaptación a pantallas reducidas: reorganiza navegación, controles y tamaños para conservar legibilidad. */
+
+@media (max-width: 760px) {
+  .br-header {
+    height: 76px;
+    padding: 0 18px;
+  }
+  .br-brand {
+    font-size: 16px;
+    gap: 13px;
+  }
+  .br-brand small {
+    font-size: 6px;
+    letter-spacing: 0.09em;
+  }
+  .br-brand-mark {
+    transform: scale(0.8);
+    transform-origin: left center;
+    width: 30px;
+  }
+  .br-online,
+  .br-header-divider {
+    display: none;
+  }
+  .br-guide-button {
+    font-size: 8px;
+    gap: 7px;
+  }
+  .br-guide-button > span:first-child {
+    display: none;
+  }
+  .br-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .br-sidebar-label {
+    padding: 0 0 13px;
+    font-size: 8px;
+  }
+  .br-risk-dot {
+    width: 4px;
+    height: 4px;
+    margin-right: 4px;
+  }
+  .br-main {
+    padding: 20px 17px 0;
+  }
+  .br-section-heading {
+    margin-bottom: 18px;
+  }
+  .br-section-heading h1 {
+    font-size: 27px;
+  }
+  .br-eyebrow {
+    font-size: 7px;
+    margin-bottom: 10px;
+  }
+  .br-viewport {
+    height: 620px;
+    min-height: 560px;
+  }
+  .br-camera-top {
+    top: 23px;
+    left: 21px;
+    right: 21px;
+  }
+  .br-camera-id {
+    font-size: 7px;
+  }
+  .br-scene-tag {
+    left: 21px;
+    top: 58px;
+    font-size: 6px;
+  }
+  .br-level-hud {
+    left: 20px;
+    bottom: 64px;
+    width: calc(100% - 40px);
+    max-width: 390px;
+  }
+  .br-level-hud h2 {
+    font-size: 48px;
+  }
+  .br-description {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .br-camera-bottom {
+    left: 21px;
+    right: 21px;
+    font-size: 6px;
+    bottom: 25px;
+  }
+  .br-camera-bottom > span:last-child {
+    font-size: 8px;
+  }
+  .br-timecode {
+    font-size: 9px;
+    margin-left: 8px;
+  }
+  .br-position {
+    font-size: 8px;
+    gap: 5px;
+  }
+  .br-position b {
+    min-width: 30px;
+  }
+  .br-small-cross,
+  .br-instrument-divider,
+  .br-view-controls button:first-child > span {
+    display: none;
+  }
+  .br-position > span:last-child {
+    display: none;
+  }
+  .br-view-controls {
+    gap: 14px;
+  }
+  .br-instrument-bar {
+    height: 49px;
+  }
+  .br-log {
+    gap: 8px;
+    min-height: 55px;
+    line-height: 1.6;
+  }
+  .br-log p {
+    max-width: 220px;
+    font-size: 7px;
+  }
+  .br-log-time {
+    font-size: 7px;
+  }
+  .br-signal-bars {
+    font-size: 10px;
+  }
+  .br-signal-bars b {
+    display: none;
+  }
+  .br-footer {
+    padding: 0 18px;
+    font-size: 6px;
+    letter-spacing: 0.05em;
+  }
+  .br-footer > span:last-child {
+    font-size: 0;
+  }
+  .br-footer-square {
+    font-size: 8px;
+  }
+  .br-touch-controls {
+    top: 130px;
+    right: 20px;
+  }
+  .is-exploring .br-level-hud {
+    pointer-events: none;
+  }
+  .is-exploring .br-explore-button {
+    pointer-events: auto;
+  }
+}
+
+/* Accesibilidad: respeta la preferencia del sistema y elimina animaciones y transiciones. */
+
+@media (prefers-reduced-motion: reduce) {
+  .br-app *,
+  .br-app *::before,
+  .br-app *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.br-level-hud h2.br-long-title {
+  font-size: clamp(30px, 3.6vw, 51px);
+}
+
+/* A quiet directory leaves more room for the live environment. */
+
+/* Selector minimalista: nombres sobre líneas finas y color de acento para el nivel seleccionado. */
+
+.br-sidebar {
+  padding: 29px 20px 0;
+}
+
+.br-sidebar-label {
+  margin: 0 0 18px;
+  color: #828778;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+
+.br-levels {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Área de clic amplia sin tarjetas ni fondos; aria-current del JSX aporta el estado accesible. */
+
+.br-level {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 1px solid #303127;
+  background: none;
+  color: #949b87;
+  font:
+    12px/1.5 "Courier New",
+    monospace;
+  letter-spacing: -0.025em;
+  text-align: left;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.br-level:hover {
+  color: #e7e3d1;
+  border-bottom-color: #747861;
+}
+
+.br-level.is-active {
+  color: var(--br-accent);
+  border-bottom-color: var(--br-accent);
+}
+
+/* Adaptación a pantallas amplias: distribuye el espacio disponible sin modificar el contenido. */
+
+@media (min-width: 761px) {
+  .br-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+}
+
+/* Adaptación a pantallas reducidas: reorganiza navegación, controles y tamaños para conservar legibilidad. */
+
+@media (max-width: 760px) {
+  .br-sidebar {
+    padding: 12px 17px 0;
+  }
+  .br-sidebar-label {
+    display: none;
+  }
+  .br-levels {
+    flex-direction: row;
+    gap: 16px;
+  }
+  .br-level {
+    width: auto;
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 12px 0;
+    font-size: 10px;
+    white-space: nowrap;
+    text-align: center;
+  }
+}

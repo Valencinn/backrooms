@@ -1,3 +1,7 @@
+/**
+ * Contenido del prototipo original. El orden determina el desbloqueo.
+ * id aparece en la URL, clueId identifica la evidencia, color/accent configuran el artefacto.
+ */
 export const chapters = [
   {
     id: "carrier",
