@@ -5,9 +5,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "THE BACKROOMS — Archivo de lo imposible",
+  title: "THE BACKROOMS",
   description:
-    "Un archivo interactivo de espacios liminales. Explorá tres niveles de los Backrooms en una experiencia 3D con estética VHS.",
+    "Una computadora encendida en la oscuridad. Tres espacios liminales originales que responden a tus acciones. Una experiencia 3D con estética VHS.",
 };
 
 export default function RootLayout({ children }) {

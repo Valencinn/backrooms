@@ -7,105 +7,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-
-// Texturas repetibles para mantener estable la apariencia entre montajes.
-function createTexture(kind, levelId) {
-  // Canvas 2D auxiliar: se convierte en textura de GPU y nunca se agrega a la página.
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  // Semilla fija: el mismo nivel conserva sus texturas entre montajes, incluso en Strict Mode.
-  let seed = 71 + levelId;
-  const random = () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-  const base =
-    kind === "wall"
-      ? levelId === 0
-        ? "#b6a365"
-        : "#777b74"
-      : kind === "floor"
-        ? levelId === 0
-          ? "#786b43"
-          : "#50534d"
-        : "#b8b5a0";
-  ctx.fillStyle = base;
-  ctx.fillRect(0, 0, 256, 256);
-  // El ruido claro y oscuro simula rugosidad sin descargar imágenes externas.
-  for (let i = 0; i < 14000; i++) {
-    ctx.fillStyle =
-      random() > 0.5
-        ? `rgba(0,0,0,${random() * 0.13})`
-        : `rgba(255,255,220,${random() * 0.12})`;
-    ctx.fillRect(
-      random() * 256,
-      random() * 256,
-      1 + random() * 2,
-      1 + random() * 2,
-    );
-  }
-  // Papel tapiz del Lobby: líneas, motivos curvos y un degradado de suciedad.
-  if (kind === "wall" && levelId === 0) {
-    ctx.strokeStyle = "rgba(79,70,34,.22)";
-    ctx.lineWidth = 1;
-    for (let x = 0; x < 280; x += 16) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 256);
-      ctx.stroke();
-      for (let y = 0; y < 270; y += 24) {
-        ctx.beginPath();
-        ctx.moveTo(x, y - 8);
-        ctx.quadraticCurveTo(x + 9, y, x, y + 8);
-        ctx.quadraticCurveTo(x - 9, y, x, y - 8);
-        ctx.stroke();
-      }
-    }
-    const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0, "rgba(0,0,0,.15)");
-    gradient.addColorStop(0.4, "transparent");
-    gradient.addColorStop(1, "rgba(40,28,0,.27)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 256, 256);
-  }
-  // Las juntas permiten leer la escala del techo y las superficies industriales.
-  if (kind === "ceiling" || (kind === "wall" && levelId !== 0)) {
-    ctx.strokeStyle = "rgba(15,19,15,.25)";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(1, 1, 254, 254);
-    if (kind === "wall") {
-      ctx.beginPath();
-      ctx.moveTo(0, 128);
-      ctx.lineTo(256, 128);
-      ctx.stroke();
-    }
-  }
-  // Las manchas radiales evitan una alfombra visualmente uniforme.
-  if (kind === "floor") {
-    for (let i = 0; i < 25; i++) {
-      const x = random() * 256,
-        y = random() * 256;
-      const gradient = ctx.createRadialGradient(
-        x,
-        y,
-        0,
-        x,
-        y,
-        10 + random() * 30,
-      );
-      gradient.addColorStop(0, "rgba(25,21,6,.14)");
-      gradient.addColorStop(1, "transparent");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 256, 256);
-    }
-  }
-  // RepeatWrapping repite la imagen; sRGB identifica una textura de color visible.
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
+import { createLevelWorld } from "./levelWorld";
+import { configureRenderer, addEnvironment } from "./graphics";
 
 export default function ThreeViewer({
   level,
@@ -145,172 +48,33 @@ export default function ThreeViewer({
       return;
     }
     // Limitar el pixel ratio contiene el costo gráfico en pantallas de alta densidad.
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = level.id === 0 ? 1.25 : 1.05;
+    configureRenderer(renderer);
+    renderer.toneMappingExposure = level.theme === "pool" ? 1.1 : 0.95;
     mount.appendChild(renderer.domElement);
     renderer.domElement.setAttribute(
       "aria-label",
-      `Escena tridimensional del nivel ${level.id}: ${level.name}`,
+      `Escena tridimensional del nivel ${level.number}: ${level.name}`,
     );
     renderer.domElement.setAttribute("role", "img");
     renderer.domElement.tabIndex = 0;
+    renderer.domElement.focus({ preventScroll: true });
 
     // Fondo y niebla comparten color para fundir los objetos distantes con el ambiente.
     const scene = new THREE.Scene();
+    const environment = addEnvironment(renderer, scene, level.theme === "hills" ? 0.22 : 0.35);
     const fogColor =
       level.id === 0 ? "#82703d" : level.id === 1 ? "#303b37" : "#382a20";
     scene.background = new THREE.Color(fogColor);
     scene.fog = new THREE.FogExp2(fogColor, level.id === 0 ? 0.037 : 0.055);
     // Perspectiva de 68 grados. YXZ aplica el giro horizontal antes de la inclinación vertical.
-    const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 85);
+    const camera = new THREE.PerspectiveCamera(68, 1, 0.08, 230);
     camera.position.set(0, 1.65, 9);
     camera.rotation.order = "YXZ";
-    let yaw = -0.16,
+    let yaw = 0,
       pitch = -0.035;
-    const height = level.id === 1 ? 4.6 : 3.3;
-    // Inventarios de recursos: cada objeto creado se registra para liberarlo explícitamente al desmontar.
-    const textures = [];
-    const materials = [];
-    const geometries = [];
-    const collisions = [];
-    const fluorescentLights = [];
-    // Helpers que crean y registran materiales/texturas; cada recurso compartido se libera una sola vez.
-    const makeMaterial = (options) => {
-      const m = new THREE.MeshStandardMaterial(options);
-      materials.push(m);
-      return m;
-    };
-    const texture = (kind, x, y) => {
-      const t = createTexture(kind, level.id);
-      t.repeat.set(x, y);
-      textures.push(t);
-      return t;
-    };
-    // Materiales PBR: roughness controla rugosidad y metalness distingue tuberías de superficies opacas.
-    const wallMat = makeMaterial({
-      map: texture("wall", 1.5, 1),
-      roughness: 0.95,
-      color: level.id === 2 ? "#a18c73" : "#ffffff",
-    });
-    const floorMat = makeMaterial({
-      map: texture("floor", 12, 24),
-      roughness: 0.95,
-    });
-    const ceilingMat = makeMaterial({
-      map: texture("ceiling", 11, 22),
-      roughness: 1,
-    });
-    const trimMat = makeMaterial({
-      color: level.id === 0 ? "#605936" : "#343b36",
-      roughness: 1,
-    });
-    const pipeMat = makeMaterial({
-      color: "#68513a",
-      roughness: 0.8,
-      metalness: 0.65,
-    });
-    const lightMat = makeMaterial({
-      color: "#fff9ca",
-      emissive: "#fff2bb",
-      emissiveIntensity: 2.5,
-    });
-    const fixtureMat = makeMaterial({
-      color: "#6f7065",
-      metalness: 0.4,
-      roughness: 0.7,
-    });
-
-    // Crea una caja, registra su geometría y coloca el mesh en la escena.
-    function box(w, h, d, x, y, z, material) {
-      const geometry = new THREE.BoxGeometry(w, h, d);
-      geometries.push(geometry);
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(x, y, z);
-      scene.add(mesh);
-      return mesh;
-    }
-    // Agrega cuerpo, zócalo y colisión AABB ampliada 0.28 unidades por el radio del explorador.
-    function wall(x, z, w, d) {
-      box(w, height, d, x, height / 2, z, wallMat);
-      box(w + 0.04, 0.13, d + 0.04, x, 0.065, z, trimMat);
-      collisions.push({
-        minX: x - w / 2 - 0.28,
-        maxX: x + w / 2 + 0.28,
-        minZ: z - d / 2 - 0.28,
-        maxZ: z + d / 2 + 0.28,
-      });
-    }
-    // Suelo, techo y paredes exteriores delimitan un recinto finito de prueba.
-    box(23, 0.2, 46, 0, -0.1, -9, floorMat);
-    box(23, 0.15, 46, 0, height + 0.075, -9, ceilingMat);
-    wall(-11.5, -9, 0.5, 46);
-    wall(11.5, -9, 0.5, 46);
-    wall(0, -32, 23, 0.5);
-    wall(0, 14, 23, 0.5);
-    // Las tuplas [x, z, ancho, profundidad] se comparten con el minimapa para mantener la misma planta.
-    level.walls.forEach(([x, z, w, d]) => wall(x, z, w, d));
-    // La luz hemisférica rellena sombras; la direccional agrega iluminación ambiental.
-    scene.add(
-      new THREE.HemisphereLight(
-        level.id === 0 ? "#fff1ba" : "#b3c6c0",
-        "#302c20",
-        level.id === 0 ? 1.4 : 0.8,
-      ),
-    );
-    const fill = new THREE.DirectionalLight("#fff0c9", 0.6);
-    fill.position.set(1, 3, 6);
-    scene.add(fill);
-    // Cada fluorescente combina carcasa, panel emisivo visible y luz puntual que ilumina el entorno.
-    for (let z = 8; z > -30; z -= 7) {
-      for (const x of level.id === 2 ? [0] : [-7.5, 0, 7.5]) {
-        box(1.8, 0.09, 0.7, x, height - 0.07, z, fixtureMat);
-        box(1.65, 0.025, 0.57, x, height - 0.13, z, lightMat);
-        const light = new THREE.PointLight(
-          level.id === 0 ? "#fff0b9" : level.id === 1 ? "#d5f1e6" : "#ffc08c",
-          24,
-          13,
-          1.6,
-        );
-        light.position.set(x, height - 0.25, z);
-        scene.add(light);
-        fluorescentLights.push(light);
-      }
-    }
-    if (level.id === 1) {
-      // Las cajas con colisiones distinguen el almacén de los otros niveles.
-      const crateMat = makeMaterial({ color: "#5d5943", roughness: 1 });
-      [
-        [-9, -4],
-        [8, -13],
-        [-8, -24],
-      ].forEach(([x, z]) => {
-        box(2, 1.3, 1.6, x, 0.65, z, crateMat);
-        collisions.push({
-          minX: x - 1.28,
-          maxX: x + 1.28,
-          minZ: z - 1.08,
-          maxZ: z + 1.08,
-        });
-        box(2.04, 0.08, 1.64, x, 1.25, z, trimMat);
-      });
-    }
-    // Los cilindros se giran 90 grados para orientar las tuberías a lo largo del pasillo.
-    if (level.id === 2) {
-      for (const x of [-4.3, 4.3]) {
-        for (const y of [1, 1.8, 2.6]) {
-          const geometry = new THREE.CylinderGeometry(0.12, 0.12, 43, 12);
-          geometries.push(geometry);
-          const pipe = new THREE.Mesh(geometry, pipeMat);
-          pipe.rotation.x = Math.PI / 2;
-          pipe.position.set(x, y, -9);
-          scene.add(pipe);
-          for (let z = 10; z > -30; z -= 4)
-            box(0.35, 0.4, 0.12, x, y, z, fixtureMat);
-        }
-      }
-    }
+    const world = createLevelWorld(scene, level, renderer);
+    renderer.shadowMap.needsUpdate = true;
+    const { collisions, fluorescentLights } = world;
 
     // Un Set guarda las teclas presionadas: el movimiento se calcula continuamente en animate.
     const keys = inputRef.current;
@@ -319,6 +83,7 @@ export default function ThreeViewer({
       lastX = 0,
       lastY = 0;
     const keyCodes = [
+      "KeyE",
       "KeyW",
       "KeyA",
       "KeyS",
@@ -332,12 +97,15 @@ export default function ThreeViewer({
     const keydown = (event) => {
       if (
         !settingsRef.current.exploring ||
+        settingsRef.current.paused ||
         event.target.closest("dialog, input, textarea") ||
         !keyCodes.includes(event.code)
       )
         return;
       event.preventDefault();
-      keys.add(event.code);
+      if (event.code === "KeyE") {
+        if (!event.repeat) world.journey.interact();
+      } else keys.add(event.code);
     };
     const keyup = (event) => keys.delete(event.code);
     // Limpia entradas si se pierde foco o se interrumpe el puntero para evitar movimiento retenido.
@@ -429,6 +197,7 @@ export default function ThreeViewer({
       last = now;
       if (document.hidden || settingsRef.current.paused) return;
       elapsed += dt;
+      let moving = false;
       if (settingsRef.current.exploring) {
         const forward =
           Number(keys.has("KeyW") || keys.has("ArrowUp")) -
@@ -436,6 +205,7 @@ export default function ThreeViewer({
         const right =
           Number(keys.has("KeyD") || keys.has("ArrowRight")) -
           Number(keys.has("KeyA") || keys.has("ArrowLeft"));
+        moving = forward !== 0 || right !== 0;
         // Normaliza la diagonal para que combinar dos direcciones no aumente la velocidad.
         const length = Math.hypot(forward, right) || 1;
         // Convierte avance y desplazamiento lateral a coordenadas globales según la orientación horizontal.
@@ -453,8 +223,12 @@ export default function ThreeViewer({
         if (canMove(camera.position.x, camera.position.z + dz))
           camera.position.z += dz;
       }
-      // Sin oscilaciones si se solicita movimiento reducido o se desactivan los efectos VHS.
       const motion = settingsRef.current.effects && !reducedMotion.matches;
+      if (settingsRef.current.exploring) {
+        world.update(dt, camera, moving, motion);
+        if (keys.delete("KeyE")) world.journey.interact();
+      }
+      // Sin oscilaciones si se solicita movimiento reducido o se desactivan los efectos VHS.
       camera.rotation.set(
         pitch,
         yaw +
@@ -476,6 +250,7 @@ export default function ThreeViewer({
           z: camera.position.z,
           yaw,
           seconds: Math.floor(elapsed),
+          ...world.journey.snapshot(),
         });
       }
     }
@@ -499,9 +274,8 @@ export default function ThreeViewer({
       canvas.removeEventListener("pointercancel", up);
       canvas.removeEventListener("lostpointercapture", clearInput);
       canvas.removeEventListener("webglcontextlost", contextLost);
-      geometries.forEach((g) => g.dispose());
-      materials.forEach((m) => m.dispose());
-      textures.forEach((t) => t.dispose());
+      world.dispose();
+      environment.dispose();
       scene.clear();
       renderer.renderLists.dispose();
       renderer.dispose();
@@ -545,6 +319,7 @@ export default function ThreeViewer({
           className="br-touch-controls"
           aria-label="Controles de desplazamiento"
         >
+          <button className="br-interact-button" disabled={paused} onClick={() => inputRef.current.add("KeyE")} aria-label="Interactuar con objeto cercano">E · USAR</button>
           {[
             ["KeyW", "↑", "Avanzar"],
             ["KeyA", "←", "Mover a la izquierda"],

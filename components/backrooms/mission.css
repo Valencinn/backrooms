@@ -1,0 +1,85 @@
+/* Terminal funcional: un único prompt, transcript con scroll y entrada persistente. */
+.br-shell { height: 100svh; min-height: 420px; display: flex; flex-direction: column; background: #040a06; color: #b2d9bf; font: 14px/1.7 "Cascadia Code", Consolas, "Liberation Mono", monospace; }
+.br-shell[hidden] { display: none; }
+.br-shell ::selection { background: #79f89a; color: #05110a; }
+.br-shell-bar { display: flex; justify-content: space-between; gap: 16px; padding: 12px 24px; background: #0b170f; border-bottom: 1px solid #25482f; color: #8ebf9c; font-size: 11px; }
+.br-shell-bar > span:first-child { display: flex; gap: 12px; align-items: center; }
+.br-shell-bar i { width: 7px; height: 7px; background: #79f89a; box-shadow: 0 0 12px #79f89a55; }
+.br-shell-body { width: min(1100px, 100%); margin: 0 auto; padding: 35px 40px 20px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.br-shell-banner { display: flex; flex-shrink: 0; gap: 35px; align-items: center; padding-bottom: 25px; margin-bottom: 15px; border-bottom: 1px dashed #244a31; }
+.br-shell-banner pre { font: 18px/1.25 "Cascadia Code", Consolas, monospace; color: #79f89a; margin: 0; }
+.br-shell-banner p { margin: 0 0 8px; color: #79f89a; font-size: 12px; }
+.br-shell-banner h1 { font: 500 28px/1.4 "Cascadia Code", Consolas, monospace; letter-spacing: .08em; color: #c2f6cf; margin: 0 0 5px; }
+.br-shell-banner span { font-size: 12px; color: #9cbea6; }
+.br-shell-banner small { display: block; color: #7fa18a; margin-top: 8px; font-size: 10px; }
+.br-shell-log { flex: 1; min-height: 0; overflow: auto; scrollbar-color: #315c3d #07100b; padding: 10px 0; overflow-wrap: anywhere; }
+.br-shell-log:focus-visible { outline: 1px solid #70cf8c; outline-offset: 3px; }
+.br-shell-output { font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; color: #a7cbb2; margin: 0 0 24px; }
+.br-shell-echo { margin: 0 0 12px; color: #d1efda; }
+.br-shell-echo > span { color: #79f89a; }
+.br-shell-prompt { flex-shrink: 0; display: flex; align-items: center; gap: 12px; border-top: 1px solid #21472e; padding: 17px 0 12px; }
+.br-shell-prompt label { color: #79f89a; white-space: nowrap; font-size: 13px; }
+.br-shell-prompt input { flex: 1; min-width: 0; background: transparent; color: #c4f8d3; border: 0; outline: none; font: 16px/1.5 "Cascadia Code", Consolas, monospace; caret-color: #79f89a; padding: 5px 0; border-bottom: 1px solid transparent; border-radius: 0; }
+.br-shell-prompt input:focus-visible { border-bottom-color: #3a794c; }
+.br-shell-prompt input::placeholder { color: #688872; }
+.br-shell-prompt button { background: #102619; border: 1px solid #396f48; color: #96f7b1; font: 20px monospace; width: 42px; height: 36px; cursor: pointer; }
+.br-shell-prompt button:focus-visible { outline: 2px solid #79f89a; outline-offset: 3px; }
+.br-shell-footer { display: flex; justify-content: space-between; gap: 16px; color: #7da187; font-size: 10px; padding-top: 4px; line-height: 1.8; }
+
+/* El nivel ocupa toda la pantalla hasta regresar por la puerta de entrada. */
+.br-mission { position: relative; width: 100%; height: 100svh; min-height: 480px; overflow: hidden; isolation: isolate; background: #06100a; color: #c5efd2; font-family: "Cascadia Code", Consolas, monospace; }
+.br-mission .br-three-mount canvas { touch-action: none; cursor: grab; }
+.br-mission .br-three-mount canvas:active { cursor: grabbing; }
+.br-mission .br-crt { opacity: .1; }
+.br-mission-header { position: absolute; z-index: 3; top: 22px; left: 26px; right: 26px; display: flex; justify-content: space-between; gap: 18px; pointer-events: none; }
+.br-mission-header > div { background: #06130bd9; padding: 12px 16px; border-left: 2px solid #79f89a; }
+.br-mission-header span { font-size: 10px; color: #93dca7; letter-spacing: .08em; }
+.br-mission-header h1 { font: 400 23px/1.4 "Cascadia Code", Consolas, monospace; margin: 6px 0 0; color: #d1f4db; }
+.br-mission-header nav { display: flex; gap: 5px; align-items: flex-start; pointer-events: auto; }
+.br-mission button { cursor: pointer; }
+.br-mission-header button { background: #07170eeb; border: 1px solid #3d6a49; padding: 10px 12px; color: #b6e3c4; font: 10px "Cascadia Code", Consolas, monospace; }
+.br-mission button:focus-visible { outline: 2px solid #79f89a; outline-offset: 3px; }
+.br-mission-objective { position: absolute; z-index: 2; top: 140px; left: 26px; padding: 16px 20px; width: min(480px, calc(100% - 52px)); background: #07140dec; border: 1px solid #375f44; pointer-events: none; }
+.br-mission-objective > span { font-size: 10px; letter-spacing: .07em; color: #8cf5ab; }
+.br-mission-objective p { font: 13px/1.7 "Cascadia Code", Consolas, monospace; margin: 10px 0; color: #d0ead8; }
+.br-mission-objective small { font-size: 10px; color: #99bda3; line-height: 1.7; display: block; }
+.br-mission-objective.is-complete { border-color: #79f89a; background: #0a2313ee; }
+.br-mission-crosshair { position: absolute; pointer-events: none; left: 50%; top: 50%; color: #d7ffe180; z-index: 2; }
+.br-mission-map { position: absolute; z-index: 2; right: 26px; bottom: 70px; width: 130px; padding: 14px; border: 1px solid #437052; background: #07140de6; color: #9dd4af; pointer-events: none; }
+.br-mission-map > span, .br-mission-map small { font-size: 9px; display: block; line-height: 1.7; }
+.br-mission-map svg { display: block; width: 100%; height: 145px; margin: 8px 0; }
+.br-mission .br-touch-controls { top: auto; bottom: 85px; left: 26px; right: auto; }
+.br-mission .br-touch-controls button.br-interact-button { min-width: 121px; }
+.br-mission-footer { position: absolute; z-index: 2; bottom: 22px; left: 26px; right: 26px; display: flex; justify-content: space-between; gap: 16px; color: #b5d6bf; font-size: 10px; line-height: 1.7; pointer-events: none; text-shadow: 0 1px 5px #000; }
+.br-mission-position { white-space: nowrap; }
+.br-mission-position b { font-weight: 400; color: #96ffb4; }
+.br-mission-paused { position: absolute; z-index: 3; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px; border: 1px solid #579269; background: #07150eed; color: #b8ebc8; font-size: 12px; white-space: nowrap; }
+.br-mission-notice { position: absolute; z-index: 6; left: 26px; bottom: 70px; max-width: calc(100% - 52px); padding: 14px; background: #07150ef5; border: 1px solid #72b585; font-size: 12px; }
+.br-mission-notice button { margin-left: 12px; color: #b8ebc8; background: transparent; border: 0; }
+.br-mission .br-guide { font-family: "Cascadia Code", Consolas, monospace; }
+@media (max-width: 760px) {
+  .br-shell { font-size: 12px; }
+  .br-shell-bar { font-size: 9px; padding: 12px 16px; }
+  .br-shell-body { padding: 24px 18px 14px; }
+  .br-shell-banner { gap: 18px; padding-bottom: 20px; }
+  .br-shell-banner pre { font-size: 11px; }
+  .br-shell-banner h1 { font-size: 18px; }
+  .br-shell-banner span { font-size: 10px; }
+  .br-shell-banner small { font-size: 9px; }
+  .br-shell-prompt { gap: 8px; flex-wrap: wrap; }
+  .br-shell-prompt label { width: 100%; font-size: 11px; }
+  .br-shell-footer { font-size: 9px; }
+  .br-shell-footer > span:last-child { display: none; }
+  .br-mission-header { top: 14px; left: 14px; right: 14px; flex-direction: column; gap: 8px; }
+  .br-mission-header > div { padding: 10px 12px; }
+  .br-mission-header span { font-size: 9px; }
+  .br-mission-header h1 { font-size: 19px; margin-top: 3px; }
+  .br-mission-header button { font-size: 9px; padding: 8px 10px; }
+  .br-mission-objective { top: 150px; left: 14px; width: calc(100% - 28px); padding: 12px 14px; }
+  .br-mission-objective p { font-size: 12px; }
+  .br-mission-map { right: 14px; bottom: 65px; width: 103px; padding: 10px; }
+  .br-mission-map svg { height: 100px; }
+  .br-mission .br-touch-controls { left: 14px; right: auto; bottom: 85px; }
+  .br-mission-footer { bottom: 14px; left: 14px; right: 14px; font-size: 9px; flex-direction: column; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .br-mission *, .br-mission *::before, .br-mission *::after { animation: none !important; transition: none !important; } }

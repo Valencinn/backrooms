@@ -1,0 +1,56 @@
+.br-entry { position: relative; height: 100svh; min-height: 460px; overflow: hidden; background: #020303; color: #c3c6b8; font-family: "Courier New", monospace; }
+.br-entry-scene, .br-entry-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.br-entry-header { position: absolute; inset: 30px 32px auto; display: flex; justify-content: space-between; gap: 20px; pointer-events: none; font-size: 10px; letter-spacing: .16em; color: #858e80; }
+.br-entry-crosshair { position: absolute; top: 50%; left: 50%; color: #ffffff44; pointer-events: none; }
+.br-entry-caption { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); width: min(400px, calc(100% - 40px)); text-align: center; pointer-events: none; }
+.br-entry-caption p { font-size: 14px; margin-bottom: 16px; text-shadow: 0 2px 8px #000; }
+.br-entry-caption > span { color: #8e9988; font-size: 12px; }
+.br-entry-caption button, .br-entry-loading button { pointer-events: auto; background: #14251dd9; color: #c4d3bc; border: 1px solid #60735b; padding: 14px 20px; font: 12px "Courier New", monospace; letter-spacing: .08em; cursor: pointer; }
+.br-entry-caption kbd { padding: 4px 7px; margin-right: 12px; border: 1px solid #9ba98e; }
+.br-entry-caption button > span { margin-left: 18px; }
+.br-entry-footer { position: absolute; bottom: 28px; left: 24px; right: 24px; text-align: center; color: #85907d; font-size: 10px; letter-spacing: .08em; line-height: 1.8; pointer-events: none; }
+.br-entry-loading { position: absolute; inset: 0; z-index: 5; background: #050807; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+.br-entry-loading > span { font-size: 11px; letter-spacing: .2em; color: #82927e; }
+.br-entry-loading h1 { font: 400 clamp(24px, 5vw, 44px) Georgia, serif; color: #c6ceb9; }
+.br-entry-loading:not(.br-boot) p { font-size: 12px; color: #82927e; }
+.br-entry-movement { position: absolute; right: 28px; bottom: 94px; display: grid; grid-template-columns: repeat(3, 34px); gap: 4px; }
+.br-entry-movement button { background: #0d1512b3; color: #b4c0a8; border: 1px solid #45503e; width: 34px; height: 34px; touch-action: none; user-select: none; }
+.br-entry-movement button:first-child { grid-column: 2; }
+.br-entry-movement button:nth-child(2) { grid-column: 1; }
+.br-entry button:focus-visible { outline: 2px solid #dac69d; outline-offset: 4px; }
+.br-leave-terminal { display: block; width: 100%; background: #1b2019; border: 0; border-bottom: 1px solid #3a4531; color: #c5cbb6; font: 11px "Courier New", monospace; letter-spacing: .1em; padding: 13px 24px; text-align: left; cursor: pointer; }
+@media(max-width: 600px) { .br-entry-header { inset: 20px 18px auto; font-size: 9px; } .br-entry-header span:last-child { max-width: 120px; text-align: right; } .br-entry-caption { bottom: 185px; } .br-entry-movement { right: calc(50% - 55px); bottom: 88px; } }
+
+/* El arranque y la habitación comparten el lenguaje de la terminal. */
+.br-entry { font-family: "Cascadia Code", Consolas, "Liberation Mono", monospace; color: #b8e2c4; }
+.br-entry-header, .br-entry-footer, .br-entry-caption > span { color: #86b795; }
+.br-entry-caption button, .br-entry-loading button { font-family: inherit; color: #adf9c2; background: #071a10ed; border-color: #4f8e60; }
+.br-entry-caption kbd { border-color: #67b87e; }
+.br-entry-movement button { color: #a0edb5; border-color: #3e714c; background: #07150de6; }
+.br-entry button:focus-visible { outline-color: #82ffa3; }
+.br-leave-terminal { background: #050b07; color: #92cfa3; border-color: #21432c; font-family: "Cascadia Code", Consolas, monospace; font-size: 10px; }
+.br-leave-terminal:hover { background: #0b1a10; color: #acffbf; }
+.br-leave-terminal:focus-visible { outline: 2px solid #79f89a; outline-offset: -4px; }
+.br-boot { background: #030805; padding: 24px; text-align: left; }
+.br-boot::after { content: ""; pointer-events: none; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, #0002 3px 4px); }
+.br-boot-window { width: min(720px, 100%); border: 1px solid #345c40; background: #060e09; box-shadow: 0 0 100px #4bff7a08; }
+.br-boot-titlebar { display: flex; justify-content: space-between; padding: 12px 18px; gap: 16px; background: #0c1a10; border-bottom: 1px solid #2a4b33; color: #92c7a0; font-size: 11px; }
+.br-boot-body { padding: 32px 36px; }
+.br-boot-identity { display: flex; align-items: center; gap: 32px; margin-bottom: 32px; }
+.br-boot-ascii { margin: 0; color: #79f89a; font: 18px/1.25 "Cascadia Code", Consolas, monospace; text-shadow: 0 0 16px #79f89a25; }
+.br-boot-identity p { margin: 6px 0; font-size: 11px; color: #85af90; }
+.br-boot-identity .br-boot-user { color: #80f9a0; font-size: 13px; }
+.br-boot h1 { font: 500 24px/1.4 "Cascadia Code", Consolas, monospace; color: #b5f9c7; margin: 10px 0; letter-spacing: .03em; }
+.br-boot-command { color: #b2d8be; font-size: 12px; margin-bottom: 22px; line-height: 1.8; }
+.br-boot-command > span { color: #7cfa9b; }
+.br-boot-lines p { font-size: 12px; color: #708e78; margin: 12px 0; line-height: 1.5; }
+.br-boot-lines p span { color: #668c72; margin-right: 8px; white-space: nowrap; }
+.br-boot-lines .is-loaded { color: #abcab4; }
+.br-boot-lines .is-loaded span { color: #7df69d; }
+.br-boot-wait { color: #9bddad; font-size: 12px; margin: 28px 0 18px; line-height: 1.7; }
+.br-boot-track { height: 3px; background: #132c1a; overflow: hidden; }
+.br-boot-track i { display: block; width: 26%; height: 100%; background: #79f89a; animation: br-boot-sweep 1.8s ease-in-out infinite alternate; }
+.br-boot-footnote { font-size: 9px; color: #739e7d; letter-spacing: .06em; margin-top: 20px; line-height: 1.9; }
+@keyframes br-boot-sweep { from { transform: translateX(0); } to { transform: translateX(285%); } }
+@media(max-width: 600px) { .br-boot { padding: 16px; } .br-boot-titlebar { font-size: 9px; padding: 12px; } .br-boot-body { padding: 24px 18px; } .br-boot-identity { gap: 18px; align-items: flex-start; } .br-boot-ascii { font-size: 11px; padding-top: 7px; } .br-boot h1 { font-size: 17px; } .br-boot-identity p { font-size: 9px; } .br-boot-command, .br-boot-lines p { font-size: 10px; } .br-boot-wait { font-size: 11px; } }
+@media(prefers-reduced-motion: reduce) { .br-boot-track i { animation: none; width: 100%; opacity: .5; } }
