@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createJourney, ENTRY_DOOR } from "../components/backrooms/journey.mjs";
+import { createJourney, ENTRY_DOOR, CHANNELS } from "../components/backrooms/journey.mjs";
 import { runCommand } from "../components/backrooms/terminalCommands.mjs";
+import { missions } from "../data/missions.mjs";
+import { normalizeCompleted, readProgress, saveProgress, PROGRESS_KEY } from "../components/backrooms/progression.mjs";
 
 const level = {
   id: 0, number: "94721", name: "La hora prestada", theme: "hills",
@@ -80,3 +82,119 @@ test("la terminal resuelve números y rechaza entradas inválidas", () => {
   assert.match(runCommand("estado", [level], [level.number]).text, /1\/1/);
   assert.match(runCommand("ls", [level], [level.number]).text, /\[✓\] 94721/);
 });
+
+const campaign = [
+  { ...level, ...missions.hills },
+  { ...level, ...missions.pool, id: 1, number: "96308", name: "El último turno", theme: "pool" },
+  { ...level, ...missions.garden, id: 2, number: "98144", name: "Jardín de espera", theme: "garden" },
+];
+
+function visit(journey, mission, station) {
+  const target = mission.stations[station];
+  journey.update(target.x, target.z, false, 0);
+}
+
+function completeTask(journey, mission, task) {
+  visit(journey, mission, task.station);
+  if (task.frequency) {
+    for (let i = 0; i < CHANNELS.indexOf(task.frequency); i++) journey.tune(1);
+  }
+  const target = mission.stations[task.station];
+  journey.update(target.x, target.z, false, task.duration || 0);
+  assert.equal(journey.interact(), true, task.id);
+}
+
+test("todos los alias de acceso exigen completar todos los niveles anteriores", () => {
+  for (const command of ["entrar", "open", "nivel", ""]) {
+    for (const mission of campaign.slice(1)) {
+      const result = runCommand(`${command} ${mission.number}`, campaign, []);
+      assert.equal(result.action, "output");
+      assert.match(result.text, /ACCESO BLOQUEADO/);
+    }
+  }
+  assert.equal(runCommand("entrar 98144", campaign, ["96308"]).action, "output");
+  assert.equal(runCommand("entrar 98144", campaign, ["94721"]).action, "output");
+  assert.equal(runCommand("entrar 98144", campaign, ["94721", "96308"]).action, "enter");
+  assert.equal(runCommand("entrar 94721", campaign, campaign.map((item) => item.number)).action, "enter");
+  assert.equal(runCommand("info 98144", campaign, []).action, "output");
+  assert.match(runCommand("niveles", campaign, []).text, /BLOQUEADO/);
+});
+
+test("el progreso persistente elimina duplicados, desconocidos y saltos de campaña", () => {
+  assert.deepEqual(normalizeCompleted(campaign, ["96308", "98144"]), []);
+  assert.deepEqual(normalizeCompleted(campaign, ["94721", "98144"]), ["94721"]);
+  assert.deepEqual(normalizeCompleted(campaign, ["96308", "94721", "94721", "otro"]), ["94721", "96308"]);
+  const values = new Map();
+  const storage = { getItem: (key) => values.get(key), setItem: (key, value) => values.set(key, value) };
+  assert.equal(saveProgress(campaign, ["94721", "96308"], storage), true);
+  assert.deepEqual(readProgress(campaign, storage), ["94721", "96308"]);
+  values.set(PROGRESS_KEY, "{JSON roto");
+  assert.deepEqual(readProgress(campaign, storage), []);
+  values.set(PROGRESS_KEY, '{"94721":true}');
+  assert.deepEqual(readProgress(campaign, storage), []);
+  const deniedStorage = { getItem() { throw Error("denied"); }, setItem() { throw Error("quota"); } };
+  assert.deepEqual(readProgress(campaign, deniedStorage), []);
+  assert.equal(saveProgress(campaign, ["94721"], deniedStorage), false);
+});
+
+test("las cartas se recogen libremente, se consumen al entregar y no permiten adelantar el reloj", () => {
+  const mission = campaign[0], journey = createJourney(mission);
+  visit(journey, mission, 6);
+  journey.update(0, -28, false, 20);
+  assert.equal(journey.interact(), false);
+  for (const task of [...mission.stages[0].tasks].reverse()) completeTask(journey, mission, task);
+  assert.equal(journey.snapshot().inventory.length, 3);
+  const wrong = mission.stations[2];
+  visit(journey, mission, 2);
+  journey.update(wrong.x, wrong.z, false, 10);
+  assert.equal(journey.interact(), false);
+  assert.match(journey.snapshot().prompt, /sin habilitar/);
+  completeTask(journey, mission, mission.stages[1].tasks[0]);
+  assert.equal(journey.snapshot().inventory.includes("Carta del ayer"), false);
+  assert.equal(journey.snapshot().inventory.length, 2);
+  assert.equal(journey.interact(), false);
+});
+
+test("no se puede recibir sin energía o en otro canal; moverse y resintonizar reinician la señal", () => {
+  const mission = campaign[2], journey = createJourney(mission);
+  visit(journey, mission, 0);
+  journey.tune(1);
+  journey.update(-3, 3, false, 10);
+  assert.equal(journey.interact(), false);
+  for (const task of mission.stages[0].tasks) completeTask(journey, mission, task);
+  visit(journey, mission, 0);
+  journey.tune(1); // 88.7: incorrecto, aunque el tiempo transcurra.
+  journey.update(-3, 3, false, 10);
+  assert.equal(journey.interact(), false);
+  journey.tune(-1); // 88.3.
+  journey.update(-3, 3, false, 2.5);
+  assert.equal(journey.interact(), false);
+  journey.update(-3, 3, true, .1);
+  journey.update(-3, 3, false, 2.5);
+  assert.equal(journey.interact(), false);
+  journey.tune(1);
+  journey.tune(-1);
+  assert.equal(journey.snapshot().signal, 0);
+  journey.update(-3, 3, false, 3);
+  assert.equal(journey.interact(), true);
+  assert.deepEqual(journey.snapshot().inventory, ["Fragmento: el próximo"]);
+});
+
+for (const mission of campaign) {
+  test(`${mission.number}: la misión completa exige todas las etapas y volver por la puerta`, () => {
+    const journey = createJourney(mission);
+    const tasks = mission.stages.flatMap((stage) => stage.tasks);
+    for (const [index, task] of tasks.entries()) {
+      completeTask(journey, mission, task);
+      assert.equal(journey.snapshot().progress, index + 1);
+      assert.equal(journey.snapshot().finished, false);
+      journey.update(ENTRY_DOOR.x, ENTRY_DOOR.z, false, 1);
+      assert.equal(journey.snapshot().finished, index === tasks.length - 1);
+    }
+    assert.equal(journey.snapshot().objectiveComplete, true);
+    assert.equal(journey.snapshot().stageIndex, mission.stages.length);
+    assert.equal(journey.interact(), false);
+    assert.equal(createJourney(mission).snapshot().progress, 0);
+    assert.deepEqual(createJourney(mission).snapshot().inventory, []);
+  });
+}

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { createSurface, labelTexture, glowTexture } from "./graphics";
+import { addWorldDetails } from "./worldDetails";
 
 import { createJourney, ENTRY_DOOR } from "./journey.mjs";
 
@@ -33,11 +34,11 @@ export function createLevelWorld(scene, level, renderer) {
     const geometry = new THREE.SphereGeometry(1, 28, 16); resources.push(geometry);
     const mesh = new THREE.Mesh(geometry, surface); mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); mesh.receiveShadow = true; scene.add(mesh);
   };
-  const fog = new THREE.Color(level.theme === "hills" ? "#91a398" : level.theme === "pool" ? "#647e76" : "#757782");
-  const dawn = new THREE.Color("#c7b08b");
+  const fog = new THREE.Color(level.theme === "hills" ? "#7f8c91" : level.theme === "pool" ? "#426669" : "#43485f");
+  const dawn = new THREE.Color("#d9a77f");
   scene.background = fog.clone(); scene.fog = new THREE.FogExp2(fog, level.theme === "hills" ? 0.012 : 0.023);
   const ambient = new THREE.HemisphereLight(level.theme === "hills" ? "#d8d3bc" : "#d5e1de", "#252d21", level.theme === "pool" ? 0.6 : 0.85); scene.add(ambient);
-  const sun = new THREE.DirectionalLight("#ffe1af", level.theme === "pool" ? 0.35 : 2.6);
+  const sun = new THREE.DirectionalLight(level.theme === "garden" ? "#b1bde9" : "#ffe1af", level.theme === "pool" ? 0.35 : level.theme === "garden" ? 1.2 : 1.5);
   sun.position.set(-30, 25, -45); sun.target.position.set(0, 0, -9); scene.add(sun, sun.target);
   const shadowSize = compact ? 1024 : 2048;
   sun.castShadow = level.theme !== "pool";
@@ -59,7 +60,7 @@ export function createLevelWorld(scene, level, renderer) {
     const geometry = new THREE.SphereGeometry(175, 32, 16); resources.push(geometry);
     const material = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false,
-      uniforms: { top: { value: new THREE.Color("#456675") }, horizon: { value: fog.clone() } },
+      uniforms: { top: { value: new THREE.Color(level.theme === "garden" ? "#202b49" : "#455c79") }, horizon: { value: fog.clone() } },
       vertexShader: "varying vec3 vDirection; void main(){vDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
       fragmentShader: `uniform vec3 top; uniform vec3 horizon; varying vec3 vDirection;
         float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -81,7 +82,7 @@ export function createLevelWorld(scene, level, renderer) {
   if (level.theme === "hills") {
     for (let i = 0; i < 20; i++) {
       const side = i % 2 ? -1 : 1;
-      sphere(side * (22 + (i % 4) * 7), -2, 20 - i * 6, 17 + i % 3 * 3, 7 + i % 4, 16);
+      sphere(side * (35 + (i % 4) * 7), -2, 20 - i * 6, 17 + i % 3 * 3, 7 + i % 4, 16);
     }
     const path = mat({ ...surfaceMap("concrete", [1, 16]), color: "#b8af90", roughness: 0.95 });
     box(2.2, 0.015, 45, 0, 0.012, -9, path);
@@ -144,7 +145,7 @@ export function createLevelWorld(scene, level, renderer) {
     box(0.3, 4.2, 46, -11, 2.1, -9, structure); box(0.3, 4.2, 46, 11, 2.1, -9, structure);
     // Pileta lateral: el borde seco siempre permite llegar a las tres válvulas.
     box(6, 0.12, 35, 7, 0.03, -9, dark);
-    for (const x of [3.8, 10.2]) box(0.25, 0.4, 35, x, 0.2, -9, structure, true);
+    for (const x of [3.8, 10.2]) box(0.25, 0.65, 35, x, 0.325, -9, structure, true);
     const waterMat = mat({ color: "#397d72", transparent: true, opacity: 0.65, metalness: 0.25, roughness: 0.12 });
     water = box(6.1, 0.04, 34.8, 7, 0.52, -9, waterMat);
     water.castShadow = false;
@@ -184,8 +185,8 @@ export function createLevelWorld(scene, level, renderer) {
       for (const dx of [-1, 1]) box(0.07, 0.55, 0.6, -8 + dx, 0.275, z, steel);
     }
     plaque("ÚLTIMO TURNO", "SALIDA POR LA ENTRADA", 0, 2.7, -31.8, 3.2);
-    // Fragmentos que emergen al bajar el agua.
-    for (let i = 0; i < 3; i++) box(3.7, 0.12, 1.3, 7, 0.13 + i * 0.06, -2 - i * 9, warm);
+    // Marcas de profundidad bajo el agua.
+    for (let i = 0; i < 3; i++) plaque(`${i + 1}.20 M`, "NO CORRER", 7, .18, -2 - i * 9, 1.5);
   } else {
     const glass = mat({ color: "#a3bcb3", transparent: true, opacity: 0.12, roughness: 0.2, metalness: 0.2, depthWrite: false, side: THREE.DoubleSide });
     box(22, 0.1, 46, 0, 6, -9, glass);
@@ -236,21 +237,58 @@ export function createLevelWorld(scene, level, renderer) {
     box(2.7, 0.05, 0.3, 0, fixtureY, z, warm);
     const light = new THREE.PointLight(level.color, 24, 14, 1.6); light.position.set(0, 3.5, z); scene.add(light); fluorescentLights.push(light);
   }
+  const stationRings = [], stationParts = [];
   level.stations.forEach((station, i) => {
     box(0.08, 1.1, 0.08, station.x, 0.55, station.z, dark);
     const material = mat({ color: level.color, emissive: level.color, emissiveIntensity: 0.8 }); indicators.push(material);
-    if (level.theme === "pool") {
+    if (station.kind === "valve") {
       const geometry = new THREE.TorusGeometry(0.3, 0.045, 10, 32); resources.push(geometry);
       const wheel = new THREE.Mesh(geometry, material); wheel.position.set(station.x, 1.25, station.z); scene.add(wheel);
       box(0.5, 0.045, 0.045, station.x, 1.25, station.z, material);
+      cylinder(.11, 1.05, station.x, .55, station.z, steel);
+      stationParts.push({ mesh: wheel, index: i, type: "wheel" });
+    } else if (station.kind === "clock" || station.kind === "gauge") {
+      const geometry = new THREE.CylinderGeometry(station.kind === "clock" ? .65 : .34, station.kind === "clock" ? .65 : .34, .14, 32); resources.push(geometry);
+      const face = new THREE.Mesh(geometry, trim); face.rotation.x = Math.PI / 2; face.position.set(station.x, 1.65, station.z); scene.add(face);
+      const hand = box(.035, .44, .035, station.x, 1.76, station.z + .09, material);
+      stationParts.push({ mesh: hand, index: i, type: "hand" });
+      for (let n = 0; n < 12; n++) {
+        const a = n / 12 * Math.PI * 2, r = station.kind === "clock" ? .53 : .26;
+        box(.045, .065, .025, station.x + Math.sin(a) * r, 1.65 + Math.cos(a) * r, station.z + .09, steel);
+      }
+    } else if (station.kind === "letter") {
+      const envelope = box(.52, .06, .34, station.x, .79, station.z, trim);
+      const stamp = box(.14, .01, .14, station.x + .14, .83, station.z, material);
+      stationParts.push({ mesh: envelope, index: i, type: "pickup" });
+      stationParts.push({ mesh: stamp, index: i, type: "pickup" });
+    } else if (station.kind === "fuse") {
+      box(.65, .16, .5, station.x, .85, station.z, dark);
+      const fuse = cylinder(.075, .4, station.x, 1.15, station.z, material);
+      stationParts.push({ mesh: fuse, index: i, type: "pickup" });
+    } else if (["panel", "relay", "transmitter", "pump"].includes(station.kind)) {
+      box(station.kind === "pump" ? 1.15 : .9, .95, .45, station.x, 1.25, station.z, steel);
+      box(.6, .28, .025, station.x, 1.45, station.z + .24, dark);
+      for (let j = 0; j < 3; j++) box(.1, .06, .03, station.x - .22 + j * .22, 1.45, station.z + .26, material);
+      box(.12, .18, .06, station.x + .22, 1.1, station.z + .26, material);
+      if (station.kind === "transmitter") {
+        cylinder(.045, 2.5, station.x, 2.4, station.z, steel);
+        for (let j = 0; j < 4; j++) box(1.4 - j * .25, .035, .035, station.x, 2.6 + j * .25, station.z, material);
+      }
     } else {
       box(0.65, 0.36, 0.42, station.x, 1.2, station.z, material);
-      if (level.theme === "garden") box(0.035, 1.2, 0.035, station.x, 1.8, station.z, structure);
+      if (station.kind === "receiver") {
+        box(0.035, 1.2, 0.035, station.x, 1.8, station.z, steel);
+        box(.4, .16, .04, station.x, 1.23, station.z + .24, dark);
+      } else box(.45, .04, .02, station.x, 1.24, station.z + .22, dark);
     }
-    plaque(String(i + 1).padStart(2, "0"), level.theme === "pool" ? "DRENAJE" : level.theme === "garden" ? "RECEPTOR" : "BUZÓN", station.x, 0.86, station.z + 0.23, 0.53);
+    plaque(String(i + 1).padStart(2, "0"), station.frequency ? `${(station.frequency / 10).toFixed(1)} MHz` : station.label.toUpperCase(), station.x, 0.55, station.z + 0.3, .9);
+    const ringGeometry = new THREE.TorusGeometry(.7, .025, 6, 32); resources.push(ringGeometry);
+    const ringMat = mat({ color: level.color, emissive: level.color, emissiveIntensity: .8, transparent: true, opacity: .65 });
+    const ring = new THREE.Mesh(ringGeometry, ringMat); ring.rotation.x = Math.PI / 2; ring.position.set(station.x, .045, station.z); scene.add(ring); stationRings.push(ringMat);
     // Marca en el suelo junto a cada objeto interactivo.
     box(0.8, 0.015, 0.8, station.x, 0.015, station.z, i % 2 ? structure : dark);
   });
+  const details = addWorldDetails({ scene, level, resources, box, mat, cylinder, plaque, steel, wood, dark, trim, glowMap, compact });
   // La puerta de regreso siempre está detrás del punto de aparición.
   const doorFrame = mat({ color: "#34463c", emissive: "#79f89a", emissiveIntensity: 0.05 });
   const doorMat = mat({ color: "#1a2922", roughness: 0.8 });
@@ -265,6 +303,7 @@ export function createLevelWorld(scene, level, renderer) {
   const doorCollision = { minX: -1.55, maxX: 1.55, minZ: doorZ - 0.35, maxZ: doorZ + 0.35 };
   collisions.push(doorCollision);
   let doorOpen = false;
+  let lastProgress = 0;
   if (level.theme === "garden") {
     const geometry = new THREE.BufferGeometry(), positions = [];
     for (let i = 0; i < 180; i++) positions.push(Math.sin(i * 78.3) * 10, 0.5 + (i * 0.137 % 4.5), 12 - (i * 1.73 % 44));
@@ -278,22 +317,35 @@ export function createLevelWorld(scene, level, renderer) {
       if (motion) elapsed += dt;
       if (dust) dust.position.y = Math.sin(elapsed * 0.23) * 0.06;
       journey.update(camera.position.x, camera.position.z, moving, dt);
-      const progress = journey.activated.size;
-      indicators.forEach((material, i) => { material.emissiveIntensity = journey.activated.has(i) ? 0.05 : 0.8; });
+      const state = journey.snapshot();
+      if (state.progress !== lastProgress) {
+        lastProgress = state.progress;
+        renderer.shadowMap.needsUpdate = true;
+      }
+      details.update(elapsed, journey, motion);
+      const progress = [0, 1, 2].filter((i) => journey.activated.has(i)).length;
+      indicators.forEach((material, i) => { material.emissiveIntensity = journey.activated.has(i) ? .12 : state.available.includes(i) ? 1.6 : .06; });
+      stationRings.forEach((material, i) => { material.opacity = journey.activated.has(i) ? .12 : state.available.includes(i) ? .85 : .08; });
+      stationParts.forEach(({ mesh, index, type }) => {
+        if (type === "pickup") mesh.visible = !journey.activated.has(index);
+        if (type === "wheel") mesh.rotation.z = journey.activated.has(index) ? Math.PI * .75 : 0;
+        if (type === "hand") mesh.rotation.z = journey.activated.has(index) ? -Math.PI / 2 : 0;
+      });
       windows.forEach((material, i) => { material.emissiveIntensity = journey.activated.has(i) ? 2 : 0; });
       windowLights.forEach((light, i) => { light.intensity = journey.activated.has(i) ? 6 : 0; });
       if (level.theme === "hills") {
         scene.background.copy(fog).lerp(dawn, progress / 3);
-        scene.fog.color.copy(scene.background); sun.intensity = 2.6 + progress * 0.35;
+        scene.fog.color.copy(scene.background); sun.intensity = 1.5 + progress * 0.5;
         if (sky) sky.material.uniforms.horizon.value.copy(scene.fog.color);
       }
-      if (water) water.position.y = THREE.MathUtils.damp(water.position.y, 0.52 - progress * 0.17, 2, dt);
+      fluorescentLights.forEach((light) => { light.userData.baseIntensity = level.theme === "pool" && !journey.done.has("power") ? 5 : 24; });
+      if (water) water.position.y = THREE.MathUtils.damp(water.position.y, journey.done.has("pump") ? .035 : .52, .7, dt);
       if (reflection) {
         reflection.position.y = water.position.y + 0.025;
         reflection.material.uniforms.rippleTime.value = elapsed;
         reflection.visible = water.position.y > 0.06;
       }
-      const complete = progress === level.stations.length;
+      const complete = state.objectiveComplete;
       doorFrame.emissiveIntensity = complete ? 2 : 0.05;
       if (complete && !doorOpen) {
         doorOpen = true;

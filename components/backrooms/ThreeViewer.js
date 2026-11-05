@@ -22,6 +22,7 @@ export default function ThreeViewer({
   const settingsRef = useRef({ exploring, paused, effects });
   const telemetryRef = useRef(onTelemetry);
   const inputRef = useRef(new Set());
+  const journeyRef = useRef(null);
   const [status, setStatus] = useState("loading");
   // Sincroniza controles con el loop. Pausar o terminar la exploración borra teclas retenidas.
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function ThreeViewer({
     let yaw = 0,
       pitch = -0.035;
     const world = createLevelWorld(scene, level, renderer);
+    journeyRef.current = world.journey;
     renderer.shadowMap.needsUpdate = true;
     const { collisions, fluorescentLights } = world;
 
@@ -84,6 +86,8 @@ export default function ThreeViewer({
       lastY = 0;
     const keyCodes = [
       "KeyE",
+      "KeyQ",
+      "KeyR",
       "KeyW",
       "KeyA",
       "KeyS",
@@ -105,6 +109,8 @@ export default function ThreeViewer({
       event.preventDefault();
       if (event.code === "KeyE") {
         if (!event.repeat) world.journey.interact();
+      } else if (event.code === "KeyQ" || event.code === "KeyR") {
+        if (!event.repeat) world.journey.tune(event.code === "KeyR" ? 1 : -1);
       } else keys.add(event.code);
     };
     const keyup = (event) => keys.delete(event.code);
@@ -227,6 +233,8 @@ export default function ThreeViewer({
       if (settingsRef.current.exploring) {
         world.update(dt, camera, moving, motion);
         if (keys.delete("KeyE")) world.journey.interact();
+        if (keys.delete("KeyQ")) world.journey.tune(-1);
+        if (keys.delete("KeyR")) world.journey.tune(1);
       }
       // Sin oscilaciones si se solicita movimiento reducido o se desactivan los efectos VHS.
       camera.rotation.set(
@@ -239,7 +247,7 @@ export default function ThreeViewer({
       );
       fluorescentLights.forEach((light, i) => {
         light.intensity =
-          24 * (motion ? 0.96 + Math.sin(elapsed * 7 + i * 5) * 0.025 : 1);
+          (light.userData.baseIntensity ?? 24) * (motion ? 0.96 + Math.sin(elapsed * 7 + i * 5) * 0.025 : 1);
       });
       // Dibuja cada frame, pero publica telemetría a React como máximo unas cuatro veces por segundo.
       renderer.render(scene, camera);
@@ -264,6 +272,7 @@ export default function ThreeViewer({
       cancelAnimationFrame(frame);
       observer.disconnect();
       keys.clear();
+      journeyRef.current = null;
       window.removeEventListener("keydown", keydown);
       window.removeEventListener("keyup", keyup);
       window.removeEventListener("blur", clearInput);
@@ -319,8 +328,9 @@ export default function ThreeViewer({
           className="br-touch-controls"
           aria-label="Controles de desplazamiento"
         >
-          <button className="br-interact-button" disabled={paused} onClick={() => inputRef.current.add("KeyE")} aria-label="Interactuar con objeto cercano">E · USAR</button>
-          {[
+          <button className="br-interact-button" disabled={paused} onClick={() => journeyRef.current?.interact()} aria-label="Interactuar con objeto cercano">E · USAR</button>
+          {level.theme === "garden" && <div className="br-tune-controls"><button disabled={paused} onClick={() => journeyRef.current?.tune(-1)} aria-label="Sintonizar canal anterior">Q −</button><button disabled={paused} onClick={() => journeyRef.current?.tune(1)} aria-label="Sintonizar canal siguiente">R +</button></div>}
+          <div className="br-movement-buttons">{[
             ["KeyW", "↑", "Avanzar"],
             ["KeyA", "←", "Mover a la izquierda"],
             ["KeyS", "↓", "Retroceder"],
@@ -345,7 +355,7 @@ export default function ThreeViewer({
             >
               {arrow}
             </button>
-          ))}
+          ))}</div>
         </div>
       )}
     </>
