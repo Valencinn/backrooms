@@ -79,9 +79,27 @@ export function createSurface(resources, kind, repeat = [1, 1], anisotropy = 4) 
   map.colorSpace = THREE.SRGBColorSpace;
   map.wrapS = map.wrapT = THREE.RepeatWrapping;
   map.repeat.set(...repeat); map.anisotropy = anisotropy;
-  const bumpMap = map.clone(); bumpMap.colorSpace = THREE.NoColorSpace;
-  resources.push(map, bumpMap);
-  return { map, bumpMap, bumpScale: kind === "tile" ? 0.025 : 0.07 };
+  const detail = ctx.getImageData(0, 0, 512, 512);
+  const height = document.createElement("canvas"), rough = document.createElement("canvas");
+  height.width = height.height = rough.width = rough.height = 512;
+  const relief = ctx.createImageData(512, 512), finish = ctx.createImageData(512, 512);
+  for (let i = 0; i < detail.data.length; i += 4) {
+    const luminance = detail.data[i] * .2126 + detail.data[i + 1] * .7152 + detail.data[i + 2] * .0722;
+    const grout = kind === "tile" && luminance < 120;
+    const h = grout ? 55 : 128 + (luminance - 128) * .35;
+    const r = kind === "tile" ? grout ? 245 : 85 + luminance * .25 : 185 + luminance * .2;
+    for (let c = 0; c < 3; c++) { relief.data[i + c] = h; finish.data[i + c] = r; }
+    relief.data[i + 3] = finish.data[i + 3] = 255;
+  }
+  height.getContext("2d").putImageData(relief, 0, 0);
+  rough.getContext("2d").putImageData(finish, 0, 0);
+  const bumpMap = new THREE.CanvasTexture(height), roughnessMap = new THREE.CanvasTexture(rough);
+  for (const texture of [bumpMap, roughnessMap]) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(...repeat); texture.anisotropy = anisotropy;
+  }
+  resources.push(map, bumpMap, roughnessMap);
+  return { map, bumpMap, roughnessMap, bumpScale: kind === "tile" ? .018 : .045 };
 }
 
 export function labelTexture(resources, title, subtitle = "BR-A / REGISTRO LOCAL") {

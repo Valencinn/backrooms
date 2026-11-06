@@ -1,4 +1,5 @@
 import test from "node:test";
+import { bindFreeLook } from "../components/backrooms/freeLook.mjs";
 import assert from "node:assert/strict";
 import { createJourney, ENTRY_DOOR, CHANNELS } from "../components/backrooms/journey.mjs";
 import { runCommand } from "../components/backrooms/terminalCommands.mjs";
@@ -10,6 +11,46 @@ const level = {
   objective: "Encendé tres ventanas.", ending: "Amaneció.",
   stations: [{ x: -3, z: 3, label: "Ayer" }, { x: 3, z: -8, label: "Ahora" }, { x: -3, z: -21, label: "Mañana" }],
 };
+
+test("la cámara gira sin botones, no duplica movimiento capturado y limpia listeners", () => {
+  const previousDocument = globalThis.document, previousWindow = globalThis.window;
+  class Surface {
+    listeners = new Map();
+    addEventListener(type, fn) { this.listeners.set(type, fn); }
+    removeEventListener(type) { this.listeners.delete(type); }
+    emit(type, values = {}) { this.listeners.get(type)?.({ type, pointerType: "mouse", buttons: 0, ...values }); }
+    focus() {}
+    requestPointerLock() { globalThis.document.pointerLockElement = this; }
+  }
+  const canvas = new Surface(), doc = new Surface(), win = new Surface();
+  win.matchMedia = () => ({ matches: true });
+  doc.exitPointerLock = () => { doc.pointerLockElement = null; };
+  globalThis.document = doc; globalThis.window = win;
+  const movements = [];
+  let active = true;
+  try {
+    const look = bindFreeLook(canvas, { active: () => active, rotate: (...delta) => movements.push(delta), clear() {} });
+    canvas.emit("pointermove", { clientX: 100, clientY: 100 });
+    canvas.emit("pointermove", { clientX: 125, clientY: 95 });
+    assert.deepEqual(movements, [[25, -5]]);
+    canvas.emit("pointerleave");
+    canvas.emit("pointermove", { clientX: 900, clientY: 500 });
+    assert.equal(movements.length, 1, "volver a la escena no hace saltar la cámara");
+    canvas.emit("click");
+    canvas.emit("pointermove", { movementX: 5, movementY: 3 });
+    doc.emit("mousemove", { movementX: 5, movementY: 3 });
+    assert.deepEqual(movements[1], [5, 3]);
+    assert.equal(movements.length, 2);
+    active = false;
+    doc.emit("mousemove", { movementX: 50, movementY: 30 });
+    assert.equal(movements.length, 2, "pausa impide mirar");
+    look.dispose();
+    assert.equal(doc.pointerLockElement, null);
+    assert.equal(canvas.listeners.size + doc.listeners.size + win.listeners.size, 0);
+  } finally {
+    globalThis.document = previousDocument; globalThis.window = previousWindow;
+  }
+});
 function activate(journey, station) {
   journey.update(station.x, station.z, false, 0);
   assert.equal(journey.interact(), true);

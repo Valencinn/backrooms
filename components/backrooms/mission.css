@@ -41,8 +41,7 @@
 
 /* El nivel ocupa toda la pantalla hasta regresar por la puerta de entrada. */
 .br-mission { position: relative; width: 100%; height: 100svh; min-height: 480px; overflow: hidden; isolation: isolate; background: #06100a; color: #c5efd2; font-family: "Cascadia Code", Consolas, monospace; }
-.br-mission .br-three-mount canvas { touch-action: none; cursor: grab; }
-.br-mission .br-three-mount canvas:active { cursor: grabbing; }
+.br-mission .br-three-mount canvas { touch-action: none; cursor: crosshair; }
 .br-mission .br-crt { opacity: .1; }
 .br-mission-header { position: absolute; z-index: 3; top: 22px; left: 26px; right: 26px; display: flex; justify-content: space-between; gap: 18px; pointer-events: none; }
 .br-mission-header > div { background: #06130bd9; padding: 12px 16px; border-left: 2px solid #79f89a; }

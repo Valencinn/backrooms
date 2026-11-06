@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { bindFreeLook } from "./freeLook.mjs";
 import * as THREE from "three";
 import BootScreen from "./BootScreen";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
@@ -40,7 +41,7 @@ export default function ComputerRoom({ onEnter }) {
     camera.position.set(0, 1.65, 3.5);
     camera.rotation.order = "YXZ";
     let yaw = 0, pitch = -0.1, frame, last = performance.now(), entered = false;
-    let dragging = false, lastX = 0, lastY = 0, previousNear = false;
+    let previousNear = false;
     const resources = [];
     const mat = (options) => {
       const material = new THREE.MeshStandardMaterial(options);
@@ -137,25 +138,19 @@ export default function ComputerRoom({ onEnter }) {
       if (codes.includes(event.code)) { event.preventDefault(); keys.current.add(event.code); }
     };
     const keyup = (event) => keys.current.delete(event.code);
-    const clear = () => { keys.current.clear(); dragging = false; };
-    const down = (event) => {
-      if (!controlsReady) return;
-      dragging = true; lastX = event.clientX; lastY = event.clientY;
-      canvas.setPointerCapture(event.pointerId); canvas.focus({ preventScroll: true });
-    };
-    const move = (event) => {
-      if (!dragging) return;
-      yaw -= (event.clientX - lastX) * 0.003;
-      pitch = THREE.MathUtils.clamp(pitch - (event.clientY - lastY) * 0.003, -0.8, 0.8);
-      lastX = event.clientX; lastY = event.clientY;
-    };
-    const up = (event) => { dragging = false; if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId); };
+    const clear = () => keys.current.clear();
+    const look = bindFreeLook(canvas, {
+      active: () => controlsReady && !entered,
+      clear,
+      rotate: (dx, dy) => {
+        yaw -= dx * .002;
+        pitch = THREE.MathUtils.clamp(pitch - dy * .002, -1.25, 1.25);
+      },
+    });
     const lost = (event) => { event.preventDefault(); controlsReady = false; clearTimeout(loadingTimer); clear(); setStatus("error"); };
     window.addEventListener("keydown", keydown); window.addEventListener("keyup", keyup);
     window.addEventListener("blur", clear); document.addEventListener("visibilitychange", clear);
-    canvas.addEventListener("pointerdown", down); canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
-    canvas.addEventListener("lostpointercapture", clear); canvas.addEventListener("webglcontextlost", lost);
+    canvas.addEventListener("webglcontextlost", lost);
     const resize = () => {
       renderer.setSize(mount.clientWidth, mount.clientHeight, false);
       camera.aspect = mount.clientWidth / Math.max(1, mount.clientHeight); camera.updateProjectionMatrix();
@@ -197,9 +192,8 @@ export default function ComputerRoom({ onEnter }) {
       cancelAnimationFrame(frame); observer.disconnect(); input.clear(); interactRef.current = () => {};
       window.removeEventListener("keydown", keydown); window.removeEventListener("keyup", keyup);
       window.removeEventListener("blur", clear); document.removeEventListener("visibilitychange", clear);
-      canvas.removeEventListener("pointerdown", down); canvas.removeEventListener("pointermove", move);
-      canvas.removeEventListener("pointerup", up); canvas.removeEventListener("pointercancel", up);
-      canvas.removeEventListener("lostpointercapture", clear); canvas.removeEventListener("webglcontextlost", lost);
+      look.dispose();
+      canvas.removeEventListener("webglcontextlost", lost);
       resources.forEach((resource) => resource.dispose());
       environment.dispose();
       scene.traverse((object) => { if (object.isLight) object.dispose(); });
@@ -230,7 +224,7 @@ export default function ComputerRoom({ onEnter }) {
             onLostPointerCapture={() => keys.current.delete(code)} onBlur={() => keys.current.delete(code)}
             onKeyDown={(e) => { if ([" ", "Enter"].includes(e.key)) { e.preventDefault(); keys.current.add(code); } }} onKeyUp={() => keys.current.delete(code)}>{icon}</button>)}
         </nav>
-        <footer className="br-entry-footer">WASD / FLECHAS · ARRASTRÁ PARA MIRAR · E PARA INTERACTUAR</footer>
+        <footer className="br-entry-footer">WASD / FLECHAS · MOUSE LIBRE · ESC CURSOR · E PARA INTERACTUAR</footer>
       </>}
     </main>
   );

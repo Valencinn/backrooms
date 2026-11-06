@@ -38,7 +38,7 @@ El HUD muestra etapa, acciones, inventario y condiciones de interacción. El map
 
 ## Controles
 
-- WASD o flechas para caminar; arrastrar el visor para mirar.
+- WASD o flechas para caminar; mover el mouse sin mantener botones para mirar (clic opcional para capturar el cursor, Esc para liberarlo).
 - E para usar la computadora o un objeto cercano. Hay botones equivalentes para tacto.
 - Q/R o los botones −/+ para cambiar entre los cinco canales de los receptores del jardín. Sólo el canal correcto acumula recepción.
 - Pausa, CRT y pantalla completa dentro de cada nivel.
@@ -66,6 +66,10 @@ El HUD muestra etapa, acciones, inventario y condiciones de interacción. El map
 Los escenarios usan geometría local sin descargar modelos, imágenes ni fuentes. Los recorridos son finitos. Riesgo, temperatura y señal son ficción; posición y progreso provienen de la escena. No hay audio ni enemigos. El jardín recibe mensajes de forma visual. Las rutas `/archivo/carrier`, `/archivo/witness` y `/archivo/echo` conservan el proyecto anterior.
 
 ## Gráficos
+
+Los niveles usan materiales físicos, mapas independientes de color, relieve y rugosidad, metales con reflejos y agua con índice de refracción de 1,333. En escritorio, una pasada de oclusión ambiental refuerza las sombras de contacto; en móvil se omite para reducir el costo. La salida final aplica el tone mapping y la conversión sRGB una sola vez. CRT comienza apagado para mantener la imagen nítida.
+
+La cámara de habitación y niveles responde al mouse sobre el canvas sin mantener botones. Un clic opcional captura el cursor para girar sin límites; Esc lo libera. La pausa, el cambio de pestaña y el desmontaje liberan la captura. En tacto se conserva el arrastre. Entrar de nuevo con el mouse al canvas no produce saltos de orientación.
 
 `components/backrooms/graphics.js` comparte la configuración del renderer, las texturas procedurales de 512 px (color y relieve), los carteles y la iluminación de entorno precalculada con PMREM. Se usa ACES, salida sRGB y filtrado anisotrópico. Las sombras PCF se calculan al construir la escena, al completar una acción y al abrir la puerta; la cámara puede moverse sin recalcular la arquitectura estática.
 

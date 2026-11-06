@@ -6,7 +6,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { bindFreeLook } from "./freeLook.mjs";
 import * as THREE from "three";
+import { createRealisticRenderer } from "./realisticRenderer";
 import { createLevelWorld } from "./levelWorld";
 import { configureRenderer, addEnvironment } from "./graphics";
 
@@ -27,7 +29,10 @@ export default function ThreeViewer({
   // Sincroniza controles con el loop. Pausar o terminar la exploración borra teclas retenidas.
   useEffect(() => {
     settingsRef.current = { exploring, paused, effects };
-    if (!exploring || paused) inputRef.current.clear();
+    if (!exploring || paused) {
+      inputRef.current.clear();
+      if (document.pointerLockElement === mountRef.current?.querySelector("canvas")) document.exitPointerLock();
+    }
   }, [exploring, paused, effects]);
   // Mantiene el callback actualizado sin convertirlo en dependencia de la creación del renderer.
   useEffect(() => {
@@ -80,10 +85,6 @@ export default function ThreeViewer({
 
     // Un Set guarda las teclas presionadas: el movimiento se calcula continuamente en animate.
     const keys = inputRef.current;
-    let dragging = false,
-      pointerId = null,
-      lastX = 0,
-      lastY = 0;
     const keyCodes = [
       "KeyE",
       "KeyQ",
@@ -115,46 +116,16 @@ export default function ThreeViewer({
     };
     const keyup = (event) => keys.delete(event.code);
     // Limpia entradas si se pierde foco o se interrumpe el puntero para evitar movimiento retenido.
-    const clearInput = () => {
-      keys.clear();
-      dragging = false;
-    };
-    // Pointer capture conserva el arrastre aunque el mouse salga del canvas; no bloquea el cursor.
-    const down = (event) => {
-      if (!settingsRef.current.exploring) return;
-      dragging = true;
-      pointerId = event.pointerId;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      renderer.domElement.setPointerCapture(event.pointerId);
-      renderer.domElement.focus({ preventScroll: true });
-    };
-    // Los desplazamientos cambian yaw y pitch; se limita la inclinación vertical a una vista cómoda.
-    const move = (event) => {
-      if (
-        !dragging ||
-        !settingsRef.current.exploring ||
-        settingsRef.current.paused
-      )
-        return;
-      yaw -= (event.clientX - lastX) * 0.003;
-      pitch = THREE.MathUtils.clamp(
-        pitch - (event.clientY - lastY) * 0.003,
-        -0.85,
-        0.85,
-      );
-      lastX = event.clientX;
-      lastY = event.clientY;
-    };
-    const up = () => {
-      dragging = false;
-      if (
-        pointerId !== null &&
-        renderer.domElement.hasPointerCapture(pointerId)
-      )
-        renderer.domElement.releasePointerCapture(pointerId);
-      pointerId = null;
-    };
+    const clearInput = () => keys.clear();
+    const look = bindFreeLook(renderer.domElement, {
+      active: () => settingsRef.current.exploring && !settingsRef.current.paused,
+      clear: clearInput,
+      rotate: (dx, dy) => {
+        yaw -= dx * .002;
+        pitch = THREE.MathUtils.clamp(pitch - dy * .002, -1.25, 1.25);
+      },
+    });
+    const pipeline = createRealisticRenderer(renderer, scene, camera);
     // Si se pierde el contexto gráfico, muestra una explicación y una opción para recargar.
     const contextLost = (event) => {
       event.preventDefault();
@@ -169,11 +140,6 @@ export default function ThreeViewer({
     window.addEventListener("blur", clearInput);
     document.addEventListener("visibilitychange", visibility);
     const canvas = renderer.domElement;
-    canvas.addEventListener("pointerdown", down);
-    canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("pointerup", up);
-    canvas.addEventListener("pointercancel", up);
-    canvas.addEventListener("lostpointercapture", clearInput);
     canvas.addEventListener("webglcontextlost", contextLost);
     // Observa el contenedor: al cambiar su aspecto también se recalcula la matriz de proyección.
     const resize = () => {
@@ -181,6 +147,8 @@ export default function ThreeViewer({
       renderer.setSize(w, h, false);
       camera.aspect = w / Math.max(h, 1);
       camera.updateProjectionMatrix();
+      // SSAO copia las matrices de proyección durante setSize.
+      pipeline.resize(w, h);
     };
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
@@ -250,7 +218,7 @@ export default function ThreeViewer({
           (light.userData.baseIntensity ?? 24) * (motion ? 0.96 + Math.sin(elapsed * 7 + i * 5) * 0.025 : 1);
       });
       // Dibuja cada frame, pero publica telemetría a React como máximo unas cuatro veces por segundo.
-      renderer.render(scene, camera);
+      pipeline.render();
       if (elapsed - lastTelemetry > 0.25) {
         lastTelemetry = elapsed;
         telemetryRef.current({
@@ -277,11 +245,8 @@ export default function ThreeViewer({
       window.removeEventListener("keyup", keyup);
       window.removeEventListener("blur", clearInput);
       document.removeEventListener("visibilitychange", visibility);
-      canvas.removeEventListener("pointerdown", down);
-      canvas.removeEventListener("pointermove", move);
-      canvas.removeEventListener("pointerup", up);
-      canvas.removeEventListener("pointercancel", up);
-      canvas.removeEventListener("lostpointercapture", clearInput);
+      look.dispose();
+      pipeline.dispose();
       canvas.removeEventListener("webglcontextlost", contextLost);
       world.dispose();
       environment.dispose();

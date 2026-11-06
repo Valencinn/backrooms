@@ -13,11 +13,11 @@ export function createLevelWorld(scene, level, renderer) {
   const surfaceMap = (kind, repeat) => createSurface(resources, kind, repeat, anisotropy);
   let elapsed = 0;
   let reflection, sky, dust;
-  const mat = (options) => { const material = new THREE.MeshStandardMaterial(options); resources.push(material); return material; };
+  const mat = (options) => { const material = new THREE.MeshPhysicalMaterial(options); resources.push(material); return material; };
   const surface = mat({ ...surfaceMap(level.theme === "hills" ? "grass" : "tile", level.theme === "hills" ? [28, 36] : [9, 16]), color: level.theme === "hills" ? "#d1d6aa" : "#cdd7cb", roughness: level.theme === "hills" ? 1 : 0.34 });
   const structure = mat({ ...surfaceMap(level.theme === "pool" ? "tile" : "plaster", [2, 1]), color: level.theme === "hills" ? "#e4dbc5" : "#9bbcaf", roughness: level.theme === "pool" ? 0.3 : 0.88 });
   const trim = mat({ color: "#d7d4ba", roughness: 0.65 });
-  const steel = mat({ color: "#4c625c", metalness: 0.8, roughness: 0.32 });
+  const steel = mat({ color: "#83918e", metalness: 0.92, roughness: 0.28 });
   const wood = mat({ ...surfaceMap("wood", [2, 1]), color: "#b7ab88", roughness: 0.8 });
   const glowMap = glowTexture(resources);
   const dark = mat({ color: "#293c36", roughness: 0.8 });
@@ -37,7 +37,7 @@ export function createLevelWorld(scene, level, renderer) {
   const fog = new THREE.Color(level.theme === "hills" ? "#7f8c91" : level.theme === "pool" ? "#426669" : "#43485f");
   const dawn = new THREE.Color("#d9a77f");
   scene.background = fog.clone(); scene.fog = new THREE.FogExp2(fog, level.theme === "hills" ? 0.012 : 0.023);
-  const ambient = new THREE.HemisphereLight(level.theme === "hills" ? "#d8d3bc" : "#d5e1de", "#252d21", level.theme === "pool" ? 0.6 : 0.85); scene.add(ambient);
+  const ambient = new THREE.HemisphereLight(level.theme === "hills" ? "#c5d4e7" : "#d5e1de", "#39332a", level.theme === "pool" ? 0.35 : 0.55); scene.add(ambient);
   const sun = new THREE.DirectionalLight(level.theme === "garden" ? "#b1bde9" : "#ffe1af", level.theme === "pool" ? 0.35 : level.theme === "garden" ? 1.2 : 1.5);
   sun.position.set(-30, 25, -45); sun.target.position.set(0, 0, -9); scene.add(sun, sun.target);
   const shadowSize = compact ? 1024 : 2048;
@@ -146,7 +146,7 @@ export function createLevelWorld(scene, level, renderer) {
     // Pileta lateral: el borde seco siempre permite llegar a las tres válvulas.
     box(6, 0.12, 35, 7, 0.03, -9, dark);
     for (const x of [3.8, 10.2]) box(0.25, 0.65, 35, x, 0.325, -9, structure, true);
-    const waterMat = mat({ color: "#397d72", transparent: true, opacity: 0.65, metalness: 0.25, roughness: 0.12 });
+    const waterMat = mat({ color: "#6caaa0", transparent: true, opacity: 0.42, metalness: 0, roughness: 0.08, clearcoat: 1, clearcoatRoughness: .06, ior: 1.333 });
     water = box(6.1, 0.04, 34.8, 7, 0.52, -9, waterMat);
     water.castShadow = false;
     const plane = new THREE.PlaneGeometry(6.05, 34.7); resources.push(plane);

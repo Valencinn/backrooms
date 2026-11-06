@@ -21,7 +21,7 @@ export default function BackroomsExplorer({ onLeave }) {
   const [transcript, setTranscript] = useState([{ type: "output", text: welcome }]);
   const [view, setView] = useState(initialView);
   const [paused, setPaused] = useState(false);
-  const [effects, setEffects] = useState(true);
+  const [effects, setEffects] = useState(false);
   const [notice, setNotice] = useState("");
   const viewport = useRef(null);
   const guide = useRef(null);
@@ -126,12 +126,12 @@ export default function BackroomsExplorer({ onLeave }) {
             </svg>
             <small>● Color: objetivo habilitado<br />{distance} m hasta la entrada</small>
           </aside>
-          <footer className="br-mission-footer"><span>WASD / FLECHAS · ARRASTRAR PARA MIRAR · E USAR</span><span className="br-mission-position">X <b>{view.x.toFixed(2)}</b> / Z <b>{view.z.toFixed(2)}</b></span></footer>
+          <footer className="br-mission-footer"><span>WASD / FLECHAS · MOUSE LIBRE · ESC CURSOR · E USAR</span><span className="br-mission-position">X <b>{view.x.toFixed(2)}</b> / Z <b>{view.z.toFixed(2)}</b></span></footer>
           {notice && <div className="br-mission-notice" role="status">{notice}<button onClick={() => setNotice("")} aria-label="Cerrar aviso">×</button></div>}
           <dialog ref={guide} className="br-guide" onClose={() => setPaused(pausedBeforeGuide.current)}>
             <form method="dialog"><button className="br-guide-close" aria-label="Cerrar guía">×</button></form>
             <p className="br-eyebrow">BR-A / {activeLevel.number}</p><h2>Controles_</h2>
-            <p>WASD o flechas para caminar. Arrastrá la escena para mirar. Usá E o el botón USAR junto a un objeto luminoso.</p>
+            <p>WASD o flechas para caminar. Mové el mouse sobre la escena para mirar sin mantener botones. Un clic captura el cursor para girar sin límites; Esc lo libera. En pantallas táctiles, arrastrá para mirar. Usá E o el botón USAR junto a un objeto luminoso.</p>
             <p>{activeLevel.note}</p>
             <p>El mapa numera cada estación. Los objetivos habilitados aparecen en color; las próximas etapas permanecen bloqueadas. El inventario guarda cartas, herramientas y mensajes.</p>
             <p>La puerta está detrás del punto donde apareciste. Completá todas las etapas y volvé a cruzarla para guardar el recorrido y habilitar el próximo nivel.</p>
